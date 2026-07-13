@@ -8,8 +8,8 @@ Tracks phase completion. Updated as we go. This is the source of truth for "wher
 | 2 | System architecture, folder structure, tech stack justification | ✅ Signed off |
 | 3 | Database design, ER diagram, indexing | ✅ Signed off |
 | 4 | REST API design, DTOs, versioning | ✅ Signed off |
-| 5 | Backend development (.NET 9) | 🟡 In progress — scaffolding + persistence layer merged |
-| 6 | Flutter development | ⬜ Not started |
+| 5 | Backend development (.NET 9) | 🟡 In progress — core loop (auth/groups/availability/events) merged |
+| 6 | Flutter development | 🟡 In progress — scaffolding + auth vertical slice merged |
 | 7 | Testing (unit/integration/widget) | ⬜ Not started |
 | 8 | DevOps (Docker, CI/CD, deployment) | ⬜ Not started |
 | 9 | Production hardening | ⬜ Not started |
@@ -50,7 +50,7 @@ Branches created 2026-07-13 (all off `master`):
 - `feature/groups` — merged 2026-07-13 (PR #6)
 - `feature/availability-smart-time-finder` — merged 2026-07-13 (PR #8)
 - `feature/events-voting` — merged 2026-07-13 (PR #10)
-- `chore/flutter-scaffolding` — empty, not started
+- `chore/flutter-scaffolding` — merged 2026-07-13 (PR #12)
 - `feature/profile`, `feature/friends`, `feature/maps`, `feature/notifications`, `feature/search-settings` — empty, not started
 
 ## Backend scaffolding (merged 2026-07-13, PR #2)
@@ -98,5 +98,14 @@ Turns an overlap window into a concrete plan — the last piece of the core prod
 - **Real bug found via manual testing, not caught by unit tests**: creating an event with both a fixed time AND location threw "circular dependency detected" from EF Core — `Event.ConfirmedTimeOptionId` points at `EventTimeOption` while `EventTimeOption.EventId` points back at `Event`, and inserting both new rows in one `SaveChanges` call is a genuine cycle EF can't topologically sort regardless of client-generated IDs. Fixed by splitting into two `SaveChanges` calls (insert first, then a plain UPDATE for the Confirmed*Id pointers). This is the third feature in a row where manual curl testing caught something unit tests structurally couldn't.
 - 15 new unit tests (57 total) + full manual verification against live Postgres with three real users
 
+## Flutter scaffolding + auth vertical slice (merged 2026-07-13, PR #12)
+First mobile code — `mobile/` targets Android, iOS, and web (desktop platforms explicitly not supported, removed from the `flutter create` output):
+- Riverpod pinned to 2.6.1 (the new 3.x line needs a newer Dart SDK than what's installed locally) + GoRouter + Dio + flutter_secure_storage + Freezed for immutable models/DTOs
+- `core/`: Dio client with JWT-attach + refresh-on-401 interceptor (mirrors the backend's rotation semantics), RFC7807-aware `Failure`/`FailureMapper` so every screen handles errors the same way, Material 3 light/dark theme, GoRouter with auth-state-driven redirects (`refreshListenable` bridged from a Riverpod provider)
+- `features/auth`: full data/domain/presentation slice — register/login/logout wired to the real backend, session restore on launch (via a locally cached user summary, since there's no `/users/me` endpoint yet), login/register screens with validation and error display
+- Android debug manifest allows cleartext HTTP only for debug builds so the emulator can reach the local backend via `10.0.2.2` — release manifest untouched
+- CI updated: added the missing `build_runner` codegen step, since `.freezed.dart`/`.g.dart` are gitignored and `flutter test` would otherwise fail in CI
+- **Verification limitation, stated explicitly rather than glossed over**: could not interactively drive a live browser or the local Android emulator in this environment (no browser-automation tool available; the emulator failed to boot here). Relied instead on `flutter analyze` (clean), `flutter build web` (compiles, proving the full dependency graph resolves), and 17 passing tests including real widget-level interaction (text entry, button taps, rendered validation/error message assertions, GoRouter navigation) against a hand-written fake `AuthRepository` — mirroring the backend's fake-repository convention. A manual `flutter run` on a real device/emulator is recommended before treating this as fully visually verified.
+
 ## Next up
-Phase 5 in progress. The full core product loop is done end-to-end: register → create group → set availability → find overlap → create event → vote → confirm → RSVP. Remaining backend feature branches: Profile, Friends, Maps, Notifications, Search & Settings — all independent, none blocking. Also worth considering: pivoting to `chore/flutter-scaffolding` to start the mobile app now that there's a substantial API surface to build against.
+Phase 5 (backend) and Phase 6 (Flutter) are both in progress in parallel. The full core loop is functional end-to-end on the backend (register → create group → set availability → find overlap → create event → vote → confirm → RSVP), and Flutter now has a working, tested auth flow against it. Natural next steps: build the Flutter Groups/Availability/Events screens against the existing API (since backend coverage is already there), and/or pick up a remaining backend-only feature branch (Profile, Friends, Maps, Notifications, Search & Settings).
