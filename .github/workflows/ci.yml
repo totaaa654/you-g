@@ -1,0 +1,87 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [master]
+  push:
+    branches: [master]
+
+jobs:
+  backend:
+    name: backend
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check backend project exists
+        id: check
+        run: |
+          if [ -f backend/YouG.sln ]; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/setup-dotnet@v4
+        if: steps.check.outputs.exists == 'true'
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Restore
+        if: steps.check.outputs.exists == 'true'
+        working-directory: backend
+        run: dotnet restore
+
+      - name: Build
+        if: steps.check.outputs.exists == 'true'
+        working-directory: backend
+        run: dotnet build --no-restore -c Release
+
+      - name: Test
+        if: steps.check.outputs.exists == 'true'
+        working-directory: backend
+        run: dotnet test --no-build -c Release --logger "console;verbosity=normal"
+
+      - name: No backend project yet
+        if: steps.check.outputs.exists == 'false'
+        run: echo "backend/YouG.sln not found yet — skipping (this is expected before Phase 5 scaffolding lands)."
+
+  mobile:
+    name: mobile
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check mobile project exists
+        id: check
+        run: |
+          if [ -f mobile/pubspec.yaml ]; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: subosito/flutter-action@v2
+        if: steps.check.outputs.exists == 'true'
+        with:
+          flutter-version: '3.x'
+          channel: stable
+
+      - name: Install dependencies
+        if: steps.check.outputs.exists == 'true'
+        working-directory: mobile
+        run: flutter pub get
+
+      - name: Analyze
+        if: steps.check.outputs.exists == 'true'
+        working-directory: mobile
+        run: flutter analyze
+
+      - name: Test
+        if: steps.check.outputs.exists == 'true'
+        working-directory: mobile
+        run: flutter test
+
+      - name: No mobile project yet
+        if: steps.check.outputs.exists == 'false'
+        run: echo "mobile/pubspec.yaml not found yet — skipping (this is expected before Phase 6 scaffolding lands)."

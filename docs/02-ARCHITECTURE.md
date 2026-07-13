@@ -153,8 +153,17 @@ Official Flutter-team package (not third-party like `auto_route`), declarative r
 
 ## 8. Backend Folder Structure
 
+**Repo root layout (monorepo)**: this is a single GitHub repo containing both apps, not two separate repos — simpler CI/CD and versioning for a solo/small-team portfolio project, at the cost of a slightly bigger checkout (a non-issue at this scale). Top-level layout:
+
 ```
-YouG.sln
+/docs        # this documentation
+/backend     # .NET solution (structure below)
+/mobile      # Flutter app (structure in Section 9)
+/.github/workflows
+```
+
+```
+YouG.sln          # lives at /backend/YouG.sln
 /src
   YouG.Domain/
     Entities/           # User, Group, Availability, Event, Vote, FriendRequest, ...
@@ -193,6 +202,8 @@ YouG.sln
 ```
 
 ## 9. Flutter Folder Structure
+
+Lives under `/mobile` at the repo root (Section 8).
 
 ```
 lib/
