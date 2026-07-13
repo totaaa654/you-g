@@ -86,6 +86,14 @@ builder.Services.AddSwaggerGen(options =>
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 
+// Local dev only — Flutter web runs on its own localhost port (CORS) and Android/iOS clients
+// talk to the plain-HTTP profile directly, so there's no origin allowlist or HTTPS cert to trust yet.
+if (builder.Environment.IsDevelopment())
+{
+    builder.Services.AddCors(options =>
+        options.AddDefaultPolicy(policy => policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader()));
+}
+
 var app = builder.Build();
 
 app.UseExceptionHandler();
@@ -94,9 +102,15 @@ if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
+    app.UseCors();
 }
-
-app.UseHttpsRedirection();
+else
+{
+    // HTTPS redirection is skipped in Development: the emulator/simulator/web client talk to the
+    // plain-HTTP profile directly, and redirecting to HTTPS would hit ASP.NET Core's self-signed
+    // dev cert, which mobile HTTP clients don't trust — the redirect fails silently as a connection error.
+    app.UseHttpsRedirection();
+}
 
 app.UseAuthentication();
 app.UseAuthorization();

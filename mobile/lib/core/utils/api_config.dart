@@ -14,10 +14,10 @@ class ApiConfig {
     // documented alias for the host loopback interface. iOS simulator and web can use
     // localhost directly since they share the host's network namespace.
     if (!kIsWeb && Platform.isAndroid) {
-      return 'http://10.0.2.2:5199';
+      return 'http://10.0.2.2:5283';
     }
 
-    return 'http://localhost:5199';
+    return 'http://localhost:5283';
   }
 
   static const String apiVersion = 'v1';
