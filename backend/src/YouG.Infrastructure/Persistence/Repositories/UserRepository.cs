@@ -24,5 +24,21 @@ public class UserRepository(YouGDbContext dbContext) : IUserRepository
     public Task<bool> ExistsByFriendCodeAsync(string friendCode, CancellationToken cancellationToken) =>
         dbContext.Users.AnyAsync(u => u.FriendCode == friendCode, cancellationToken);
 
+    public async Task<(List<User> Users, int TotalCount)> SearchByUsernameAsync(
+        string query, int page, int pageSize, CancellationToken cancellationToken)
+    {
+        // Username is citext, so Contains() is already case-insensitive at the DB level.
+        var matches = dbContext.Users.Where(u => !u.IsDeleted && u.Username.Contains(query));
+
+        var totalCount = await matches.CountAsync(cancellationToken);
+        var users = await matches
+            .OrderBy(u => u.Username)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(cancellationToken);
+
+        return (users, totalCount);
+    }
+
     public void Add(User user) => dbContext.Users.Add(user);
 }

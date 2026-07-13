@@ -29,5 +29,17 @@ public class FakeUserRepository : IUserRepository
     public Task<bool> ExistsByFriendCodeAsync(string friendCode, CancellationToken cancellationToken) =>
         Task.FromResult(Users.Any(u => u.FriendCode == friendCode));
 
+    public Task<(List<User> Users, int TotalCount)> SearchByUsernameAsync(
+        string query, int page, int pageSize, CancellationToken cancellationToken)
+    {
+        var matches = Users
+            .Where(u => !u.IsDeleted && u.Username.Contains(query, StringComparison.OrdinalIgnoreCase))
+            .OrderBy(u => u.Username)
+            .ToList();
+
+        var pageOfMatches = matches.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+        return Task.FromResult((pageOfMatches, matches.Count));
+    }
+
     public void Add(User user) => Users.Add(user);
 }
