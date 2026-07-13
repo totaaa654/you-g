@@ -13,5 +13,8 @@ public class FakeEventRepository : IEventRepository
     public Task<List<Event>> GetByGroupIdAsync(Guid groupId, CancellationToken cancellationToken) =>
         Task.FromResult(Events.Where(e => e.GroupId == groupId).ToList());
 
+    public Task<List<Event>> GetByGroupIdsAsync(IReadOnlyCollection<Guid> groupIds, CancellationToken cancellationToken) =>
+        Task.FromResult(Events.Where(e => groupIds.Contains(e.GroupId)).ToList());
+
     public void Add(Event @event) => Events.Add(@event);
 }

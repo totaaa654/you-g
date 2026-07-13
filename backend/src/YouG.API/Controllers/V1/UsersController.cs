@@ -9,6 +9,8 @@ using YouG.Application.Features.Profile.Dtos;
 using YouG.Application.Features.Profile.Queries.GetMyProfile;
 using YouG.Application.Features.Profile.Queries.GetPublicProfile;
 using YouG.Application.Features.Profile.Queries.SearchUsers;
+using YouG.Application.Features.Settings.Commands.UpdateMySettings;
+using YouG.Application.Features.Settings.Dtos;
 
 namespace YouG.API.Controllers.V1;
 
@@ -43,6 +45,19 @@ public class UsersController(ISender sender) : ControllerBase
     {
         await sender.Send(new DeleteMyAccountCommand(), cancellationToken);
         return NoContent();
+    }
+
+    [HttpPatch("me/settings")]
+    [ProducesResponseType<SettingsDto>(StatusCodes.Status200OK)]
+    public async Task<ActionResult<SettingsDto>> UpdateSettings(UpdateSettingsRequest request, CancellationToken cancellationToken)
+    {
+        var result = await sender.Send(
+            new UpdateMySettingsCommand(
+                request.ThemePreference, request.IsSearchable, request.NotifyOnFriendRequest,
+                request.NotifyOnGroupInvite, request.NotifyOnEventReminder, request.NotifyOnScheduleUpdate),
+            cancellationToken);
+
+        return Ok(result);
     }
 
     [HttpGet("{id:guid}")]

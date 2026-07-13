@@ -36,7 +36,7 @@ public class FakeUserRepository : IUserRepository
         string query, int page, int pageSize, CancellationToken cancellationToken)
     {
         var matches = Users
-            .Where(u => !u.IsDeleted && u.Username.Contains(query, StringComparison.OrdinalIgnoreCase))
+            .Where(u => !u.IsDeleted && u.IsSearchable && u.Username.Contains(query, StringComparison.OrdinalIgnoreCase))
             .OrderBy(u => u.Username)
             .ToList();
 

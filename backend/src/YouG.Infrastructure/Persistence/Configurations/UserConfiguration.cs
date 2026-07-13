@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using YouG.Domain.Entities;
+using YouG.Domain.Enums;
 
 namespace YouG.Infrastructure.Persistence.Configurations;
 
@@ -23,5 +24,12 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
 
         builder.Property(u => u.DisplayName).IsRequired().HasMaxLength(100);
         builder.Property(u => u.TimeZoneId).IsRequired().HasMaxLength(64);
+
+        builder.Property(u => u.ThemePreference).HasConversion<short>().HasDefaultValue(ThemeMode.System);
+        builder.Property(u => u.IsSearchable).HasDefaultValue(true);
+        builder.Property(u => u.NotifyOnFriendRequest).HasDefaultValue(true);
+        builder.Property(u => u.NotifyOnGroupInvite).HasDefaultValue(true);
+        builder.Property(u => u.NotifyOnEventReminder).HasDefaultValue(true);
+        builder.Property(u => u.NotifyOnScheduleUpdate).HasDefaultValue(true);
     }
 }
