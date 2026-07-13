@@ -48,8 +48,9 @@ Branches created 2026-07-13 (all off `master`):
 - `chore/backend-scaffolding` — merged 2026-07-13 (PR #2)
 - `feature/auth` — merged 2026-07-13 (PR #4)
 - `feature/groups` — merged 2026-07-13 (PR #6)
+- `feature/availability-smart-time-finder` — merged 2026-07-13 (PR #8)
 - `chore/flutter-scaffolding` — empty, not started
-- `feature/profile`, `feature/friends`, `feature/availability-smart-time-finder`, `feature/events-voting`, `feature/maps`, `feature/notifications`, `feature/search-settings` — empty, not started
+- `feature/profile`, `feature/friends`, `feature/events-voting`, `feature/maps`, `feature/notifications`, `feature/search-settings` — empty, not started
 
 ## Backend scaffolding (merged 2026-07-13, PR #2)
 `backend/` — .NET 9 solution, 8 projects (Domain, Application, Infrastructure, API + 4 test projects):
@@ -78,5 +79,14 @@ Create/update group, membership, roles, invite links — unblocks Availability/E
 - **Real bug found via manual testing, not caught by unit tests**: `JwtBearerHandler` remaps the `sub` claim to a legacy `ClaimTypes.NameIdentifier` URI by default, silently breaking `ICurrentUserService`. Fixed with `options.MapInboundClaims = false`. Reinforces why the manual end-to-end curl pass is a required step, not optional polish, for every feature branch.
 - 16 new unit tests (29 total) + full manual verification against live Postgres with two real users (create, 404-not-member, invite link, join, 403-not-admin, 409-sole-admin, removal)
 
+## Availability & Smart Time Finder (merged 2026-07-13, PR #8)
+The product's core differentiator per the PRD — recurrence rules, materialization, group overlap ranking, and heatmap:
+- `RecurrenceMaterializationJob`: expands `AvailabilityRules` into materialized `AvailabilityInstance` rows for a rolling 8-week horizon. Triggered immediately after a rule is created (instant feedback) and swept every 24h by `RecurrenceMaterializationBackgroundService`. Never overwrites a manually-edited instance or one owned by a different rule.
+- **Design correction made during development**: the job started as an Infrastructure class coupled directly to `DbContext`, inconsistent with the Repository pattern used everywhere else — refactored into a pure Application-layer class (`YouG.Application/Features/Availability/Jobs/`) depending only on repository interfaces. Fully unit-testable with fakes as a result.
+- `GET /groups/{id}/overlap`: ranks windows by available-member count descending, with weekend-only and preferred-daypart filters (dayparts, not clock times, per the daypart-granularity decision)
+- `GET /groups/{id}/heatmap`: flat cell list, Available-only counts
+- **Two real bugs found via manual testing**: (1) enums weren't serialized as strings by default — `"Monday"` couldn't bind to `DayOfWeek` — fixed with a global `JsonStringEnumConverter`, now matching every example in `docs/04-API-DESIGN.md`; (2) an off-by-one in the test author's own test expectations (56-day horizon is inclusive → 9 weekly occurrences, not 8), caught while writing tests rather than manually.
+- 18 new unit tests (42 total) covering override-preservation, EffectiveFrom/EffectiveUntil boundaries, overlap ranking, heatmap counting + full manual verification against live Postgres
+
 ## Next up
-Phase 5 in progress. Groups foundation is in place — next is picking one of the remaining feature branches. Availability & Smart Time Finder or Events & Voting are now unblocked since Groups exists; Profile/Friends/Search-Settings remain independent options too.
+Phase 5 in progress. Auth, Groups, and Availability/Smart-Time-Finder are done — the core scheduling loop (register → create group → set availability → find overlap) is fully functional end-to-end. Next: Events & Voting (turns an overlap window into a concrete event), or Profile/Friends/Search-Settings.
