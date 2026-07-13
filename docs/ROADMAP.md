@@ -53,7 +53,8 @@ Branches created 2026-07-13 (all off `master`):
 - `feature/events-voting` — merged 2026-07-13 (PR #10)
 - `chore/flutter-scaffolding` — merged 2026-07-13 (PR #12)
 - `feature/profile` — merged 2026-07-13 (PR #14)
-- `feature/friends`, `feature/maps`, `feature/notifications`, `feature/search-settings` — empty, not started
+- `feature/friends` — merged 2026-07-13 (PR #16)
+- `feature/maps`, `feature/notifications`, `feature/search-settings` — empty, not started
 
 ## Backend scaffolding (merged 2026-07-13, PR #2)
 `backend/` — .NET 9 solution, 8 projects (Domain, Application, Infrastructure, API + 4 test projects):
@@ -119,5 +120,15 @@ Account view/update/delete, public profiles, username search:
 - 11 new unit tests (61 total) + full manual verification against live Postgres, including confirming the scrubbed row directly via `psql` (FriendCode exactly 10 chars, all constraints satisfied)
 - **Explicitly deferred to `feature/search-settings`**: `PATCH /users/me/settings` (dark mode, privacy, notification prefs) — no DB columns exist for these yet (not part of the Phase 3 schema), so building it now would mean an ad hoc migration instead of the properly-scoped Settings feature
 
+## Friends feature (merged 2026-07-13, PR #16)
+Friend requests, one-sided favoriting, blocking, mutual friends:
+- `FriendRequest` doubles as the friendship record (`Status = Accepted` *is* the friendship) — no separate Friendships table, per the 2026-07-13 decision above
+- One-sided favoriting needed two new boolean columns (`RequesterFavorited`/`AddresseeFavorited`) since a friendship row is shared by both participants — a single `IsFavorite` flag would be ambiguous
+- Sending a request to someone who already sent one auto-accepts instead of creating a duplicate row (mutual-add UX)
+- Blocking dissolves any existing friendship/pending request and blocks new requests in either direction; unblocking restores the ability to re-friend
+- `GetMutualFriendsQuery` satisfies the Profile epic's "Mutual Friends" requirement that had to be deferred out of `feature/profile` — it needs `FriendRequests` data that didn't exist on that branch
+- New endpoints: `GET/POST /friends`, `GET/PUT /friends/requests`, `DELETE/PATCH /friends/{userId}`, `GET /friends/{userId}/mutual`, `POST /blocks`, `DELETE /blocks/{userId}`
+- 22 new unit tests (83 total) + full manual verification against live Postgres with three real users covering every branch (auto-accept, block/unblock, decline-then-re-request reopening as Pending, 403 when a non-recipient tries to respond) — no bugs found this time, a first for the project
+
 ## Next up
-Phase 5 (backend) and Phase 6 (Flutter) are both in progress in parallel. Backend now covers: auth, groups, availability/smart-time-finder, events/voting, profile. Flutter has scaffolding + a working auth flow. Remaining backend-only branches: Friends, Maps, Notifications, Search & Settings. Natural next step given the "finish backend first" decision (2026-07-13): continue with Friends next, since it's well-scoped and completes the social graph.
+Phase 5 (backend) and Phase 6 (Flutter) are both in progress in parallel. Backend now covers: auth, groups, availability/smart-time-finder, events/voting, profile, friends. Flutter has scaffolding + a working auth flow. Remaining backend-only branches: Maps, Notifications, Search & Settings. Natural next step given the "finish backend first" decision (2026-07-13): Maps and Notifications are the two with real external-service setup (Google Maps Platform, push notification provider) — Search & Settings is comparatively self-contained and could go first if minimizing external-setup dependencies is preferred.
