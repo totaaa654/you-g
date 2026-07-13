@@ -2,7 +2,9 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using YouG.Application.Common.Interfaces;
+using YouG.Application.Features.Availability.Jobs;
 using YouG.Infrastructure.Auth;
+using YouG.Infrastructure.BackgroundJobs;
 using YouG.Infrastructure.Persistence;
 using YouG.Infrastructure.Persistence.Repositories;
 
@@ -24,10 +26,15 @@ public static class DependencyInjection
         services.AddScoped<IGroupRepository, GroupRepository>();
         services.AddScoped<IGroupMemberRepository, GroupMemberRepository>();
         services.AddScoped<IGroupInviteLinkRepository, GroupInviteLinkRepository>();
+        services.AddScoped<IAvailabilityRuleRepository, AvailabilityRuleRepository>();
+        services.AddScoped<IAvailabilityInstanceRepository, AvailabilityInstanceRepository>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddSingleton<IDateTimeProvider, DateTimeProvider>();
         services.AddSingleton<IPasswordHasher, PasswordHasher>();
         services.AddSingleton<ITokenService, JwtTokenService>();
+
+        services.AddScoped<IRecurrenceMaterializationJob, RecurrenceMaterializationJob>();
+        services.AddHostedService<RecurrenceMaterializationBackgroundService>();
 
         return services;
     }

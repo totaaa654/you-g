@@ -3,6 +3,9 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using YouG.API.Contracts.Groups;
+using YouG.Application.Features.Availability.Dtos;
+using YouG.Application.Features.Availability.Queries.GetGroupHeatmap;
+using YouG.Application.Features.Availability.Queries.GetGroupOverlap;
 using YouG.Application.Features.Groups.Commands.ChangeMemberRole;
 using YouG.Application.Features.Groups.Commands.CreateGroup;
 using YouG.Application.Features.Groups.Commands.CreateInviteLink;
@@ -101,6 +104,35 @@ public class GroupsController(ISender sender) : ControllerBase
     public async Task<ActionResult<GroupDto>> Join(string code, CancellationToken cancellationToken)
     {
         var result = await sender.Send(new JoinGroupViaInviteCommand(code), cancellationToken);
+        return Ok(result);
+    }
+
+    [HttpGet("{id:guid}/overlap")]
+    [ProducesResponseType<OverlapResultDto>(StatusCodes.Status200OK)]
+    public async Task<ActionResult<OverlapResultDto>> GetOverlap(
+        Guid id,
+        [FromQuery] DateOnly from,
+        [FromQuery] DateOnly to,
+        [FromQuery] bool weekendOnly,
+        [FromQuery] string? preferredDayparts,
+        CancellationToken cancellationToken)
+    {
+        var dayparts = string.IsNullOrWhiteSpace(preferredDayparts)
+            ? null
+            : preferredDayparts.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Select(Enum.Parse<Domain.Enums.Daypart>)
+                .ToList();
+
+        var result = await sender.Send(new GetGroupOverlapQuery(id, from, to, weekendOnly, dayparts), cancellationToken);
+        return Ok(result);
+    }
+
+    [HttpGet("{id:guid}/heatmap")]
+    [ProducesResponseType<HeatmapResultDto>(StatusCodes.Status200OK)]
+    public async Task<ActionResult<HeatmapResultDto>> GetHeatmap(
+        Guid id, [FromQuery] DateOnly from, [FromQuery] DateOnly to, CancellationToken cancellationToken)
+    {
+        var result = await sender.Send(new GetGroupHeatmapQuery(id, from, to), cancellationToken);
         return Ok(result);
     }
 }

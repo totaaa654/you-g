@@ -1,4 +1,5 @@
 using System.Text;
+using System.Text.Json.Serialization;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
@@ -12,7 +13,10 @@ using YouG.Infrastructure.Auth;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllers();
+// Enums as strings on the wire (e.g. "Evening", not 2) — matches every example in
+// docs/04-API-DESIGN.md and is far more usable for API consumers than raw integers.
+builder.Services.AddControllers()
+    .AddJsonOptions(options => options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
