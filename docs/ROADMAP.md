@@ -45,8 +45,9 @@ Repo: https://github.com/totaaa654/you-g (public). `master` is protected — PRs
 
 Branches created 2026-07-13 (all off `master`):
 - `chore/backend-scaffolding` — merged 2026-07-13 (PR #2)
+- `feature/auth` — merged 2026-07-13 (PR #4)
 - `chore/flutter-scaffolding` — empty, not started
-- `feature/auth`, `feature/profile`, `feature/friends`, `feature/groups`, `feature/availability-smart-time-finder`, `feature/events-voting`, `feature/maps`, `feature/notifications`, `feature/search-settings` — empty, not started
+- `feature/profile`, `feature/friends`, `feature/groups`, `feature/availability-smart-time-finder`, `feature/events-voting`, `feature/maps`, `feature/notifications`, `feature/search-settings` — empty, not started
 
 ## Backend scaffolding (merged 2026-07-13, PR #2)
 `backend/` — .NET 9 solution, 8 projects (Domain, Application, Infrastructure, API + 4 test projects):
@@ -58,5 +59,14 @@ Branches created 2026-07-13 (all off `master`):
 - `docker-compose.yml` (Postgres only, for local dev) + initial EF migration, verified against a live database
 - **Deliberately deferred to `feature/auth`**: JWT bearer authentication wiring — this branch only set up feature-agnostic scaffolding
 
+## Auth feature (merged 2026-07-13, PR #4)
+Email/password register, login, refresh, logout — the foundation every other feature branch depends on ([Authorize] now actually works):
+- Repository + Unit of Work pattern (`IUserRepository`, `IRefreshTokenRepository`) backing the four MediatR commands
+- Password hashing via ASP.NET Core Identity's `PasswordHasher<T>` (PBKDF2) — no third-party dependency
+- JWT access tokens (15min) + rotating, hashed, single-use refresh tokens (30-day); replaying a rotated token is rejected
+- `ConflictException`/`AuthenticationFailedException` → 409/401 via `GlobalExceptionHandler`
+- 13 unit tests against in-memory fake repositories (zero DB dependency) + full manual end-to-end verification via curl against live Postgres
+- **Deliberately out of scope, tracked as follow-up**: Google Sign-In and forgot/reset-password — both need external dependencies (Google token verification, an email sender) not yet in the codebase
+
 ## Next up
-Phase 5 in progress. Next: build out `feature/auth` (JWT bearer, token issuance/refresh, register/login endpoints) — the foundation every other feature branch depends on.
+Phase 5 in progress. Auth foundation is in place — next is picking one of the remaining feature branches (Profile, Friends, or Groups are the natural next steps since Availability/Events/Voting depend on Groups existing first).
