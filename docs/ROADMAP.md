@@ -36,6 +36,16 @@ Tracks phase completion. Updated as we go. This is the source of truth for "wher
 | 2026-07-13 | API versioning = URL segment (`/api/v1/...`) | Visible in logs/Swagger, no header the Flutter client must remember to set |
 | 2026-07-13 | Pagination = offset-based (page/pageSize), not cursor-based | Simpler, sufficient at MVP list-size scale; revisit for Notifications feed in Phase 9 if needed |
 | 2026-07-13 | 404 (not 403) returned when a non-member requests a group/event they can't access | Prevents enumerating valid resource IDs the requester has no access to |
+| 2026-07-13 | Monorepo layout: `/backend` (.NET solution) + `/mobile` (Flutter app) at repo root | Single repo simplifies CI/CD and versioning for a solo/small-team portfolio project |
+| 2026-07-13 | CI/CD groundwork (GitHub Actions skeleton + branch protection) moved up from Phase 8 to before Phase 5 coding starts | Branches + CI need to exist together to be meaningful; branches without gated PRs are just naming conventions |
+| 2026-07-13 | Branching strategy: `chore/*` and `feature/*` branches off `master`, PR required, CI (`backend`/`mobile` checks) must pass, 0 required approvals (solo dev) | Standard PR-gated workflow, demonstrates practice without adding self-review friction for a one-person team |
+
+## Repo & Branches
+Repo: https://github.com/totaaa654/you-g (public). `master` is protected — PRs required, `backend`/`mobile` CI checks must pass, no force-push/delete.
+
+Branches created 2026-07-13 (all off `master`, currently empty):
+- `chore/backend-scaffolding`, `chore/flutter-scaffolding`
+- `feature/auth`, `feature/profile`, `feature/friends`, `feature/groups`, `feature/availability-smart-time-finder`, `feature/events-voting`, `feature/maps`, `feature/notifications`, `feature/search-settings`
 
 ## Next up
-Phase 4 (`docs/04-API-DESIGN.md`) signed off. Proceeding to Phase 5: Backend Development (ASP.NET Core Clean Architecture implementation).
+Phase 4 (`docs/04-API-DESIGN.md`) signed off. Proceeding to Phase 5: Backend Development, starting on `chore/backend-scaffolding`.
