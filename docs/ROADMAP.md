@@ -40,6 +40,7 @@ Tracks phase completion. Updated as we go. This is the source of truth for "wher
 | 2026-07-13 | CI/CD groundwork (GitHub Actions skeleton + branch protection) moved up from Phase 8 to before Phase 5 coding starts | Branches + CI need to exist together to be meaningful; branches without gated PRs are just naming conventions |
 | 2026-07-13 | Branching strategy: `chore/*` and `feature/*` branches off `master`, PR required, CI (`backend`/`mobile` checks) must pass, 0 required approvals (solo dev) | Standard PR-gated workflow, demonstrates practice without adding self-review friction for a one-person team |
 | 2026-07-13 | Google Sign-In setup fully deferred until Flutter app exists (Phase 6) | Mobile client IDs need a real app package name + signing key; half-configuring the Google Cloud project now would sit unfinished |
+| 2026-07-13 | Finish all remaining backend feature branches before returning to Flutter screens | User's explicit choice over the Flutter-first recommendation — avoids bouncing between two codebases; accepted tradeoff is not seeing a fuller working app until backend is fully done |
 
 ## Repo & Branches
 Repo: https://github.com/totaaa654/you-g (public). `master` is protected — PRs required, `backend`/`mobile` CI checks must pass, no force-push/delete.
@@ -51,7 +52,8 @@ Branches created 2026-07-13 (all off `master`):
 - `feature/availability-smart-time-finder` — merged 2026-07-13 (PR #8)
 - `feature/events-voting` — merged 2026-07-13 (PR #10)
 - `chore/flutter-scaffolding` — merged 2026-07-13 (PR #12)
-- `feature/profile`, `feature/friends`, `feature/maps`, `feature/notifications`, `feature/search-settings` — empty, not started
+- `feature/profile` — merged 2026-07-13 (PR #14)
+- `feature/friends`, `feature/maps`, `feature/notifications`, `feature/search-settings` — empty, not started
 
 ## Backend scaffolding (merged 2026-07-13, PR #2)
 `backend/` — .NET 9 solution, 8 projects (Domain, Application, Infrastructure, API + 4 test projects):
@@ -107,5 +109,15 @@ First mobile code — `mobile/` targets Android, iOS, and web (desktop platforms
 - CI updated: added the missing `build_runner` codegen step, since `.freezed.dart`/`.g.dart` are gitignored and `flutter test` would otherwise fail in CI
 - **Verification limitation, stated explicitly rather than glossed over**: could not interactively drive a live browser or the local Android emulator in this environment (no browser-automation tool available; the emulator failed to boot here). Relied instead on `flutter analyze` (clean), `flutter build web` (compiles, proving the full dependency graph resolves), and 17 passing tests including real widget-level interaction (text entry, button taps, rendered validation/error message assertions, GoRouter navigation) against a hand-written fake `AuthRepository` — mirroring the backend's fake-repository convention. A manual `flutter run` on a real device/emulator is recommended before treating this as fully visually verified.
 
+## Profile feature (merged 2026-07-13, PR #14)
+Account view/update/delete, public profiles, username search:
+- `GET/PATCH /users/me`, `DELETE /users/me`, `GET /users/{id}`, `GET /users/search`
+- Account deletion fully implements the soft-delete tombstone decision: PII scrubbed with synthetic unique placeholders (Email/Username/FriendCode are NOT NULL + unique, so can't be nulled — replaced with values derived from the user's own Id), every active refresh token revoked to force logout everywhere
+- Deleted user's public profile → 404, identical to a never-existing user
+- Username search excludes soft-deleted accounts, offset-paginated, case-insensitive via citext for free
+- Extracted `TimeZoneValidation` as a shared helper (was duplicated inline in `RegisterCommandValidator`) — first real instance of DRY-ing up cross-feature validation logic
+- 11 new unit tests (61 total) + full manual verification against live Postgres, including confirming the scrubbed row directly via `psql` (FriendCode exactly 10 chars, all constraints satisfied)
+- **Explicitly deferred to `feature/search-settings`**: `PATCH /users/me/settings` (dark mode, privacy, notification prefs) — no DB columns exist for these yet (not part of the Phase 3 schema), so building it now would mean an ad hoc migration instead of the properly-scoped Settings feature
+
 ## Next up
-Phase 5 (backend) and Phase 6 (Flutter) are both in progress in parallel. The full core loop is functional end-to-end on the backend (register → create group → set availability → find overlap → create event → vote → confirm → RSVP), and Flutter now has a working, tested auth flow against it. Natural next steps: build the Flutter Groups/Availability/Events screens against the existing API (since backend coverage is already there), and/or pick up a remaining backend-only feature branch (Profile, Friends, Maps, Notifications, Search & Settings).
+Phase 5 (backend) and Phase 6 (Flutter) are both in progress in parallel. Backend now covers: auth, groups, availability/smart-time-finder, events/voting, profile. Flutter has scaffolding + a working auth flow. Remaining backend-only branches: Friends, Maps, Notifications, Search & Settings. Natural next step given the "finish backend first" decision (2026-07-13): continue with Friends next, since it's well-scoped and completes the social graph.
