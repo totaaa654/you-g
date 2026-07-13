@@ -2,10 +2,14 @@ using Asp.Versioning;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using YouG.API.Contracts.Events;
 using YouG.API.Contracts.Groups;
 using YouG.Application.Features.Availability.Dtos;
 using YouG.Application.Features.Availability.Queries.GetGroupHeatmap;
 using YouG.Application.Features.Availability.Queries.GetGroupOverlap;
+using YouG.Application.Features.Events.Commands.CreateEvent;
+using YouG.Application.Features.Events.Dtos;
+using YouG.Application.Features.Events.Queries.GetGroupEvents;
 using YouG.Application.Features.Groups.Commands.ChangeMemberRole;
 using YouG.Application.Features.Groups.Commands.CreateGroup;
 using YouG.Application.Features.Groups.Commands.CreateInviteLink;
@@ -133,6 +137,29 @@ public class GroupsController(ISender sender) : ControllerBase
         Guid id, [FromQuery] DateOnly from, [FromQuery] DateOnly to, CancellationToken cancellationToken)
     {
         var result = await sender.Send(new GetGroupHeatmapQuery(id, from, to), cancellationToken);
+        return Ok(result);
+    }
+
+    [HttpPost("{id:guid}/events")]
+    [ProducesResponseType<EventDto>(StatusCodes.Status201Created)]
+    public async Task<ActionResult<EventDto>> CreateEvent(Guid id, CreateEventRequest request, CancellationToken cancellationToken)
+    {
+        var result = await sender.Send(
+            new CreateEventCommand(
+                id, request.Title, request.Description, request.MaxAttendees,
+                request.InitialStartUtc, request.InitialEndUtc,
+                request.InitialLocationName, request.InitialLocationAddress,
+                request.InitialLocationLatitude, request.InitialLocationLongitude),
+            cancellationToken);
+
+        return StatusCode(StatusCodes.Status201Created, result);
+    }
+
+    [HttpGet("{id:guid}/events")]
+    [ProducesResponseType<List<EventDto>>(StatusCodes.Status200OK)]
+    public async Task<ActionResult<List<EventDto>>> GetEvents(Guid id, CancellationToken cancellationToken)
+    {
+        var result = await sender.Send(new GetGroupEventsQuery(id), cancellationToken);
         return Ok(result);
     }
 }
