@@ -8,7 +8,7 @@ Tracks phase completion. Updated as we go. This is the source of truth for "wher
 | 2 | System architecture, folder structure, tech stack justification | ✅ Signed off |
 | 3 | Database design, ER diagram, indexing | ✅ Signed off |
 | 4 | REST API design, DTOs, versioning | ✅ Signed off |
-| 5 | Backend development (.NET 9) | ⬜ Not started |
+| 5 | Backend development (.NET 9) | 🟡 In progress — scaffolding + persistence layer merged |
 | 6 | Flutter development | ⬜ Not started |
 | 7 | Testing (unit/integration/widget) | ⬜ Not started |
 | 8 | DevOps (Docker, CI/CD, deployment) | ⬜ Not started |
@@ -43,9 +43,20 @@ Tracks phase completion. Updated as we go. This is the source of truth for "wher
 ## Repo & Branches
 Repo: https://github.com/totaaa654/you-g (public). `master` is protected — PRs required, `backend`/`mobile` CI checks must pass, no force-push/delete.
 
-Branches created 2026-07-13 (all off `master`, currently empty):
-- `chore/backend-scaffolding`, `chore/flutter-scaffolding`
-- `feature/auth`, `feature/profile`, `feature/friends`, `feature/groups`, `feature/availability-smart-time-finder`, `feature/events-voting`, `feature/maps`, `feature/notifications`, `feature/search-settings`
+Branches created 2026-07-13 (all off `master`):
+- `chore/backend-scaffolding` — merged 2026-07-13 (PR #2)
+- `chore/flutter-scaffolding` — empty, not started
+- `feature/auth`, `feature/profile`, `feature/friends`, `feature/groups`, `feature/availability-smart-time-finder`, `feature/events-voting`, `feature/maps`, `feature/notifications`, `feature/search-settings` — empty, not started
+
+## Backend scaffolding (merged 2026-07-13, PR #2)
+`backend/` — .NET 9 solution, 8 projects (Domain, Application, Infrastructure, API + 4 test projects):
+- 16 Domain entities + 8 enums matching `docs/03-DATABASE.md` exactly, all built on a shared `Entity` base using `Guid.CreateVersion7()`
+- `YouGDbContext` + per-entity EF Core configurations (citext, smallint enums, jsonb, the critical `(UserId, Date)` overlap index, explicit FK/cascade matrix)
+- MediatR CQRS-lite wired via `AddApplication()`, with `ValidationBehavior` (FluentValidation) and `LoggingBehavior` pipeline behaviors
+- `GlobalExceptionHandler` (RFC 7807 ProblemDetails), Swagger, API versioning wired in `Program.cs`
+- `NetArchTest`-based architecture tests enforcing the dependency rule mechanically (3 passing)
+- `docker-compose.yml` (Postgres only, for local dev) + initial EF migration, verified against a live database
+- **Deliberately deferred to `feature/auth`**: JWT bearer authentication wiring — this branch only set up feature-agnostic scaffolding
 
 ## Next up
-Phase 4 (`docs/04-API-DESIGN.md`) signed off. Proceeding to Phase 5: Backend Development, starting on `chore/backend-scaffolding`.
+Phase 5 in progress. Next: build out `feature/auth` (JWT bearer, token issuance/refresh, register/login endpoints) — the foundation every other feature branch depends on.
