@@ -11,4 +11,9 @@ public class FriendRequest : Entity
     public FriendRequestStatus Status { get; set; } = FriendRequestStatus.Pending;
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset? RespondedAt { get; set; }
+
+    // Favorite is inherently one-sided — each participant in the friendship can
+    // independently mark the other as a favorite, so it needs two columns, not one.
+    public bool RequesterFavorited { get; set; }
+    public bool AddresseeFavorited { get; set; }
 }
