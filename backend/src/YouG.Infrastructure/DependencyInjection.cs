@@ -28,6 +28,12 @@ public static class DependencyInjection
         services.AddScoped<IGroupInviteLinkRepository, GroupInviteLinkRepository>();
         services.AddScoped<IAvailabilityRuleRepository, AvailabilityRuleRepository>();
         services.AddScoped<IAvailabilityInstanceRepository, AvailabilityInstanceRepository>();
+        services.AddScoped<IEventRepository, EventRepository>();
+        services.AddScoped<IEventTimeOptionRepository, EventTimeOptionRepository>();
+        services.AddScoped<IEventLocationOptionRepository, EventLocationOptionRepository>();
+        services.AddScoped<IEventTimeVoteRepository, EventTimeVoteRepository>();
+        services.AddScoped<IEventLocationVoteRepository, EventLocationVoteRepository>();
+        services.AddScoped<IEventAttendanceRepository, EventAttendanceRepository>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddSingleton<IDateTimeProvider, DateTimeProvider>();
         services.AddSingleton<IPasswordHasher, PasswordHasher>();
