@@ -49,8 +49,9 @@ Branches created 2026-07-13 (all off `master`):
 - `feature/auth` — merged 2026-07-13 (PR #4)
 - `feature/groups` — merged 2026-07-13 (PR #6)
 - `feature/availability-smart-time-finder` — merged 2026-07-13 (PR #8)
+- `feature/events-voting` — merged 2026-07-13 (PR #10)
 - `chore/flutter-scaffolding` — empty, not started
-- `feature/profile`, `feature/friends`, `feature/events-voting`, `feature/maps`, `feature/notifications`, `feature/search-settings` — empty, not started
+- `feature/profile`, `feature/friends`, `feature/maps`, `feature/notifications`, `feature/search-settings` — empty, not started
 
 ## Backend scaffolding (merged 2026-07-13, PR #2)
 `backend/` — .NET 9 solution, 8 projects (Domain, Application, Infrastructure, API + 4 test projects):
@@ -88,5 +89,14 @@ The product's core differentiator per the PRD — recurrence rules, materializat
 - **Two real bugs found via manual testing**: (1) enums weren't serialized as strings by default — `"Monday"` couldn't bind to `DayOfWeek` — fixed with a global `JsonStringEnumConverter`, now matching every example in `docs/04-API-DESIGN.md`; (2) an off-by-one in the test author's own test expectations (56-day horizon is inclusive → 9 weekly occurrences, not 8), caught while writing tests rather than manually.
 - 18 new unit tests (42 total) covering override-preservation, EffectiveFrom/EffectiveUntil boundaries, overlap ranking, heatmap counting + full manual verification against live Postgres
 
+## Events & Voting (merged 2026-07-13, PR #10)
+Turns an overlap window into a concrete plan — the last piece of the core product loop:
+- Create event two ways: fixed time+location (auto-Confirmed, no voting) or open-ended (Proposed, then propose/vote on `EventTimeOptions`/`EventLocationOptions` before the organizer calls `/confirm`) — both paths resolve through the same option tables per the Phase 3 design note
+- Voting is idempotent (PUT again is a no-op) and retractable (DELETE)
+- Attendance enforces `MaxAttendees` as a hard cap on `Going` only — `Maybe`/`CantGo` never blocked, and a user already `Going` can re-affirm even when the event is externally full
+- New `EventAuthorization` helper reuses the 404-non-member/403-non-organizer pattern from Groups
+- **Real bug found via manual testing, not caught by unit tests**: creating an event with both a fixed time AND location threw "circular dependency detected" from EF Core — `Event.ConfirmedTimeOptionId` points at `EventTimeOption` while `EventTimeOption.EventId` points back at `Event`, and inserting both new rows in one `SaveChanges` call is a genuine cycle EF can't topologically sort regardless of client-generated IDs. Fixed by splitting into two `SaveChanges` calls (insert first, then a plain UPDATE for the Confirmed*Id pointers). This is the third feature in a row where manual curl testing caught something unit tests structurally couldn't.
+- 15 new unit tests (57 total) + full manual verification against live Postgres with three real users
+
 ## Next up
-Phase 5 in progress. Auth, Groups, and Availability/Smart-Time-Finder are done — the core scheduling loop (register → create group → set availability → find overlap) is fully functional end-to-end. Next: Events & Voting (turns an overlap window into a concrete event), or Profile/Friends/Search-Settings.
+Phase 5 in progress. The full core product loop is done end-to-end: register → create group → set availability → find overlap → create event → vote → confirm → RSVP. Remaining backend feature branches: Profile, Friends, Maps, Notifications, Search & Settings — all independent, none blocking. Also worth considering: pivoting to `chore/flutter-scaffolding` to start the mobile app now that there's a substantial API surface to build against.
