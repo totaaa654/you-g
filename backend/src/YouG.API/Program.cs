@@ -4,7 +4,9 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using YouG.API.Middleware;
+using YouG.API.Services;
 using YouG.Application;
+using YouG.Application.Common.Interfaces;
 using YouG.Infrastructure;
 using YouG.Infrastructure.Auth;
 
@@ -15,12 +17,19 @@ builder.Services.AddControllers();
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
+
 var jwtSettings = builder.Configuration.GetSection(JwtSettings.SectionName).Get<JwtSettings>()
     ?? throw new InvalidOperationException($"Missing '{JwtSettings.SectionName}' configuration section.");
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
+        // Without this, the handler remaps "sub" to the legacy ClaimTypes.NameIdentifier URI,
+        // silently breaking any FindFirst(JwtRegisteredClaimNames.Sub) lookup (e.g. CurrentUserService).
+        options.MapInboundClaims = false;
+
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,

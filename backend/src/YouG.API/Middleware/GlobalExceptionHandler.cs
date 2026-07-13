@@ -46,6 +46,24 @@ public class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logger) : IE
                     Status = StatusCodes.Status401Unauthorized
                 }),
 
+            NotFoundException notFoundException => (
+                StatusCodes.Status404NotFound,
+                new ProblemDetails
+                {
+                    Type = "https://youg.app/errors/not-found",
+                    Title = notFoundException.Message,
+                    Status = StatusCodes.Status404NotFound
+                }),
+
+            ForbiddenException forbiddenException => (
+                StatusCodes.Status403Forbidden,
+                new ProblemDetails
+                {
+                    Type = "https://youg.app/errors/forbidden",
+                    Title = forbiddenException.Message,
+                    Status = StatusCodes.Status403Forbidden
+                }),
+
             _ => (
                 StatusCodes.Status500InternalServerError,
                 new ProblemDetails
