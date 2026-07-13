@@ -34,6 +34,8 @@ public static class DependencyInjection
         services.AddScoped<IEventTimeVoteRepository, EventTimeVoteRepository>();
         services.AddScoped<IEventLocationVoteRepository, EventLocationVoteRepository>();
         services.AddScoped<IEventAttendanceRepository, EventAttendanceRepository>();
+        services.AddScoped<IFriendRequestRepository, FriendRequestRepository>();
+        services.AddScoped<IBlockedUserRepository, BlockedUserRepository>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddSingleton<IDateTimeProvider, DateTimeProvider>();
         services.AddSingleton<IPasswordHasher, PasswordHasher>();

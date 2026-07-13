@@ -20,6 +20,9 @@ public class FakeUserRepository : IUserRepository
     public Task<User?> GetByEmailAsync(string email, CancellationToken cancellationToken) =>
         Task.FromResult(Users.FirstOrDefault(u => u.Email == email));
 
+    public Task<User?> GetByFriendCodeAsync(string friendCode, CancellationToken cancellationToken) =>
+        Task.FromResult(Users.FirstOrDefault(u => u.FriendCode == friendCode));
+
     public Task<bool> ExistsByEmailAsync(string email, CancellationToken cancellationToken) =>
         Task.FromResult(Users.Any(u => u.Email == email));
 
