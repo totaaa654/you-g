@@ -9,6 +9,9 @@ public class UserRepository(YouGDbContext dbContext) : IUserRepository
     public Task<User?> GetByIdAsync(Guid id, CancellationToken cancellationToken) =>
         dbContext.Users.FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
 
+    public Task<List<User>> GetByIdsAsync(IReadOnlyCollection<Guid> ids, CancellationToken cancellationToken) =>
+        dbContext.Users.Where(u => ids.Contains(u.Id)).ToListAsync(cancellationToken);
+
     public Task<User?> GetByEmailAsync(string email, CancellationToken cancellationToken) =>
         dbContext.Users.FirstOrDefaultAsync(u => u.Email == email, cancellationToken);
 

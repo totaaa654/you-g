@@ -21,6 +21,9 @@ public static class DependencyInjection
 
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
+        services.AddScoped<IGroupRepository, GroupRepository>();
+        services.AddScoped<IGroupMemberRepository, GroupMemberRepository>();
+        services.AddScoped<IGroupInviteLinkRepository, GroupInviteLinkRepository>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddSingleton<IDateTimeProvider, DateTimeProvider>();
         services.AddSingleton<IPasswordHasher, PasswordHasher>();
