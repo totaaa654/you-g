@@ -72,6 +72,11 @@ jobs:
         working-directory: mobile
         run: flutter pub get
 
+      - name: Generate code (Freezed/json_serializable)
+        if: steps.check.outputs.exists == 'true'
+        working-directory: mobile
+        run: dart run build_runner build --delete-conflicting-outputs
+
       - name: Analyze
         if: steps.check.outputs.exists == 'true'
         working-directory: mobile
