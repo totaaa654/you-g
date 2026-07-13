@@ -1,6 +1,7 @@
 using FluentValidation;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
+using YouG.Application.Common.Exceptions;
 
 namespace YouG.API.Middleware;
 
@@ -26,6 +27,24 @@ public class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logger) : IE
                     Title = "One or more validation errors occurred.",
                     Status = StatusCodes.Status400BadRequest
                 } as ProblemDetails),
+
+            ConflictException conflictException => (
+                StatusCodes.Status409Conflict,
+                new ProblemDetails
+                {
+                    Type = "https://youg.app/errors/conflict",
+                    Title = conflictException.Message,
+                    Status = StatusCodes.Status409Conflict
+                }),
+
+            AuthenticationFailedException authException => (
+                StatusCodes.Status401Unauthorized,
+                new ProblemDetails
+                {
+                    Type = "https://youg.app/errors/authentication-failed",
+                    Title = authException.Message,
+                    Status = StatusCodes.Status401Unauthorized
+                }),
 
             _ => (
                 StatusCodes.Status500InternalServerError,
