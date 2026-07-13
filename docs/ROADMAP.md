@@ -41,6 +41,7 @@ Tracks phase completion. Updated as we go. This is the source of truth for "wher
 | 2026-07-13 | Branching strategy: `chore/*` and `feature/*` branches off `master`, PR required, CI (`backend`/`mobile` checks) must pass, 0 required approvals (solo dev) | Standard PR-gated workflow, demonstrates practice without adding self-review friction for a one-person team |
 | 2026-07-13 | Google Sign-In setup fully deferred until Flutter app exists (Phase 6) | Mobile client IDs need a real app package name + signing key; half-configuring the Google Cloud project now would sit unfinished |
 | 2026-07-13 | Finish all remaining backend feature branches before returning to Flutter screens | User's explicit choice over the Flutter-first recommendation — avoids bouncing between two codebases; accepted tradeoff is not seeing a fuller working app until backend is fully done |
+| 2026-07-13 | Event-location maps use OpenStreetMap via `flutter_map`, not Google Maps SDK | User didn't want to attach a billing card to Google Cloud even though the free tier would likely cover a portfolio project's usage; OSM needs no API key or billing account at all. Backend is unaffected — lat/lng/address were already stored generically in the Events feature; this is a Flutter-only rendering choice |
 
 ## Repo & Branches
 Repo: https://github.com/totaaa654/you-g (public). `master` is protected — PRs required, `backend`/`mobile` CI checks must pass, no force-push/delete.
