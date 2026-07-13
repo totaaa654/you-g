@@ -1,0 +1,19 @@
+# Local development only. The API service (and a Postgres-in-container setup that mirrors
+# production) is added in Phase 8 — for now this just gives `dotnet run` / EF migrations
+# something to talk to without installing Postgres natively.
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: youg-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: youg
+      POSTGRES_USER: youg
+      POSTGRES_PASSWORD: youg_dev_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - youg_postgres_data:/var/lib/postgresql/data
+
+volumes:
+  youg_postgres_data:
