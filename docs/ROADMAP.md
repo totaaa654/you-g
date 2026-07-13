@@ -39,6 +39,7 @@ Tracks phase completion. Updated as we go. This is the source of truth for "wher
 | 2026-07-13 | Monorepo layout: `/backend` (.NET solution) + `/mobile` (Flutter app) at repo root | Single repo simplifies CI/CD and versioning for a solo/small-team portfolio project |
 | 2026-07-13 | CI/CD groundwork (GitHub Actions skeleton + branch protection) moved up from Phase 8 to before Phase 5 coding starts | Branches + CI need to exist together to be meaningful; branches without gated PRs are just naming conventions |
 | 2026-07-13 | Branching strategy: `chore/*` and `feature/*` branches off `master`, PR required, CI (`backend`/`mobile` checks) must pass, 0 required approvals (solo dev) | Standard PR-gated workflow, demonstrates practice without adding self-review friction for a one-person team |
+| 2026-07-13 | Google Sign-In setup fully deferred until Flutter app exists (Phase 6) | Mobile client IDs need a real app package name + signing key; half-configuring the Google Cloud project now would sit unfinished |
 
 ## Repo & Branches
 Repo: https://github.com/totaaa654/you-g (public). `master` is protected — PRs required, `backend`/`mobile` CI checks must pass, no force-push/delete.
@@ -46,8 +47,9 @@ Repo: https://github.com/totaaa654/you-g (public). `master` is protected — PRs
 Branches created 2026-07-13 (all off `master`):
 - `chore/backend-scaffolding` — merged 2026-07-13 (PR #2)
 - `feature/auth` — merged 2026-07-13 (PR #4)
+- `feature/groups` — merged 2026-07-13 (PR #6)
 - `chore/flutter-scaffolding` — empty, not started
-- `feature/profile`, `feature/friends`, `feature/groups`, `feature/availability-smart-time-finder`, `feature/events-voting`, `feature/maps`, `feature/notifications`, `feature/search-settings` — empty, not started
+- `feature/profile`, `feature/friends`, `feature/availability-smart-time-finder`, `feature/events-voting`, `feature/maps`, `feature/notifications`, `feature/search-settings` — empty, not started
 
 ## Backend scaffolding (merged 2026-07-13, PR #2)
 `backend/` — .NET 9 solution, 8 projects (Domain, Application, Infrastructure, API + 4 test projects):
@@ -66,7 +68,15 @@ Email/password register, login, refresh, logout — the foundation every other f
 - JWT access tokens (15min) + rotating, hashed, single-use refresh tokens (30-day); replaying a rotated token is rejected
 - `ConflictException`/`AuthenticationFailedException` → 409/401 via `GlobalExceptionHandler`
 - 13 unit tests against in-memory fake repositories (zero DB dependency) + full manual end-to-end verification via curl against live Postgres
-- **Deliberately out of scope, tracked as follow-up**: Google Sign-In and forgot/reset-password — both need external dependencies (Google token verification, an email sender) not yet in the codebase
+- **Deliberately out of scope, tracked as follow-up**: Google Sign-In and forgot/reset-password — both need external dependencies (Google token verification, an email sender) not yet in the codebase. Decision made 2026-07-13: defer fully until the Flutter app exists (Phase 6), since Google Sign-In's mobile client IDs can't be finished without a real app package name/signing key anyway.
+
+## Groups feature (merged 2026-07-13, PR #6)
+Create/update group, membership, roles, invite links — unblocks Availability/Events/Voting, which all depend on group membership existing:
+- Repository pattern (`IGroupRepository`, `IGroupMemberRepository`, `IGroupInviteLinkRepository`) + new `ICurrentUserService` (resolves caller from JWT claims, reusable by every future authenticated feature)
+- New shared exceptions `NotFoundException` (404) / `ForbiddenException` (403), matching the Phase 4 authorization matrix exactly (non-member → 404, member-but-not-admin → 403)
+- Business rules: can't leave/demote a group's sole admin while other members exist; re-joining an already-valid invite link is idempotent
+- **Real bug found via manual testing, not caught by unit tests**: `JwtBearerHandler` remaps the `sub` claim to a legacy `ClaimTypes.NameIdentifier` URI by default, silently breaking `ICurrentUserService`. Fixed with `options.MapInboundClaims = false`. Reinforces why the manual end-to-end curl pass is a required step, not optional polish, for every feature branch.
+- 16 new unit tests (29 total) + full manual verification against live Postgres with two real users (create, 404-not-member, invite link, join, 403-not-admin, 409-sole-admin, removal)
 
 ## Next up
-Phase 5 in progress. Auth foundation is in place — next is picking one of the remaining feature branches (Profile, Friends, or Groups are the natural next steps since Availability/Events/Voting depend on Groups existing first).
+Phase 5 in progress. Groups foundation is in place — next is picking one of the remaining feature branches. Availability & Smart Time Finder or Events & Voting are now unblocked since Groups exists; Profile/Friends/Search-Settings remain independent options too.
