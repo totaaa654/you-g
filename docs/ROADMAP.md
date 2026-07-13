@@ -54,7 +54,8 @@ Branches created 2026-07-13 (all off `master`):
 - `chore/flutter-scaffolding` — merged 2026-07-13 (PR #12)
 - `feature/profile` — merged 2026-07-13 (PR #14)
 - `feature/friends` — merged 2026-07-13 (PR #16)
-- `feature/maps`, `feature/notifications`, `feature/search-settings` — empty, not started
+- `feature/search-settings` — merged 2026-07-13 (PR #18)
+- `feature/maps`, `feature/notifications` — empty, not started
 
 ## Backend scaffolding (merged 2026-07-13, PR #2)
 `backend/` — .NET 9 solution, 8 projects (Domain, Application, Infrastructure, API + 4 test projects):
@@ -130,5 +131,14 @@ Friend requests, one-sided favoriting, blocking, mutual friends:
 - New endpoints: `GET/POST /friends`, `GET/PUT /friends/requests`, `DELETE/PATCH /friends/{userId}`, `GET /friends/{userId}/mutual`, `POST /blocks`, `DELETE /blocks/{userId}`
 - 22 new unit tests (83 total) + full manual verification against live Postgres with three real users covering every branch (auto-accept, block/unblock, decline-then-re-request reopening as Pending, 403 when a non-recipient tries to respond) — no bugs found this time, a first for the project
 
+## Search & Settings feature (merged 2026-07-13, PR #18)
+Dark mode, notification prefs, search-visibility toggle, unified search:
+- Settings (`ThemePreference`, `IsSearchable`, four `NotifyOn*` booleans matching the existing `NotificationType` enum) live directly on `Users` rather than a separate 1:1 table — always-exists-once-per-user data, no benefit from splitting out
+- Scope decision confirmed before implementation (PRD only said "privacy controls" with no detail): `IsSearchable = false` excludes a user from `GET /users/search` only — friends/group co-members still resolve the profile normally through their own relationship-scoped queries
+- `GET /search?q=&type=friends|groups|events` reuses each feature's existing DTOs (`PublicProfileDto`/`GroupDto`/`EventDto`) rather than inventing a parallel result shape; Groups/Events search is scoped to the caller's own groups
+- `ProfileDto` extended with a `Settings` field so `GET /users/me` doubles as the settings-load endpoint, since the API design doc only specifies the PATCH side
+- **Real bug caught before touching the dev database**: EF Core does not carry C# field initializers (`= true`) into migration `DEFAULT` clauses — the first-generated migration used `DEFAULT FALSE` for every new boolean, which would have silently opted every existing user out of notifications/search visibility. Caught by reading the generated migration SQL before applying it; fixed with explicit `HasDefaultValue(true)` in `UserConfiguration`, migration regenerated clean. This is now a standing thing to check on any migration adding a non-default-false column.
+- 5 new unit tests (88 total) + full manual verification against live Postgres with two real users — confirmed new-user defaults post-fix, settings round-trip, search-visibility exclusion, and all three search scopes
+
 ## Next up
-Phase 5 (backend) and Phase 6 (Flutter) are both in progress in parallel. Backend now covers: auth, groups, availability/smart-time-finder, events/voting, profile, friends. Flutter has scaffolding + a working auth flow. Remaining backend-only branches: Maps, Notifications, Search & Settings. Natural next step given the "finish backend first" decision (2026-07-13): Maps and Notifications are the two with real external-service setup (Google Maps Platform, push notification provider) — Search & Settings is comparatively self-contained and could go first if minimizing external-setup dependencies is preferred.
+Phase 5 (backend) and Phase 6 (Flutter) are both in progress in parallel. Backend now covers: auth, groups, availability/smart-time-finder, events/voting, profile, friends, search & settings. Flutter has scaffolding + a working auth flow. Remaining backend-only branches: Maps, Notifications — both need real external-service setup (Google Maps Platform, a push notification provider) before implementation can start.
