@@ -31,7 +31,7 @@ public class UserRepository(YouGDbContext dbContext) : IUserRepository
         string query, int page, int pageSize, CancellationToken cancellationToken)
     {
         // Username is citext, so Contains() is already case-insensitive at the DB level.
-        var matches = dbContext.Users.Where(u => !u.IsDeleted && u.Username.Contains(query));
+        var matches = dbContext.Users.Where(u => !u.IsDeleted && u.IsSearchable && u.Username.Contains(query));
 
         var totalCount = await matches.CountAsync(cancellationToken);
         var users = await matches

@@ -2,6 +2,7 @@ using MediatR;
 using YouG.Application.Common.Exceptions;
 using YouG.Application.Common.Interfaces;
 using YouG.Application.Features.Profile.Dtos;
+using YouG.Application.Features.Settings;
 
 namespace YouG.Application.Features.Profile.Commands.UpdateMyProfile;
 
@@ -26,6 +27,6 @@ public class UpdateMyProfileCommandHandler(
 
         return new ProfileDto(
             user.Id, user.Email, user.Username, user.DisplayName, user.Bio,
-            user.ProfilePictureUrl, user.TimeZoneId, user.FriendCode, user.CreatedAt);
+            user.ProfilePictureUrl, user.TimeZoneId, user.FriendCode, user.CreatedAt, user.ToSettingsDto());
     }
 }

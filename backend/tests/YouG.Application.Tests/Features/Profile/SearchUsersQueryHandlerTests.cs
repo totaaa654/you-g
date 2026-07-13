@@ -6,14 +6,15 @@ namespace YouG.Application.Tests.Features.Profile;
 
 public class SearchUsersQueryHandlerTests
 {
-    private static User MakeUser(string username, bool isDeleted = false) => new()
+    private static User MakeUser(string username, bool isDeleted = false, bool isSearchable = true) => new()
     {
         Email = $"{username}@example.com",
         Username = username,
         FriendCode = $"YG-{username}",
         DisplayName = username,
         TimeZoneId = "UTC",
-        IsDeleted = isDeleted
+        IsDeleted = isDeleted,
+        IsSearchable = isSearchable
     };
 
     [Fact]
@@ -22,6 +23,20 @@ public class SearchUsersQueryHandlerTests
         var users = new FakeUserRepository();
         users.Users.Add(MakeUser("mayag"));
         users.Users.Add(MakeUser("mayadeleted", isDeleted: true));
+
+        var handler = new SearchUsersQueryHandler(users);
+        var result = await handler.Handle(new SearchUsersQuery("maya", 1, 20), CancellationToken.None);
+
+        Assert.Single(result.Users);
+        Assert.Equal("mayag", result.Users[0].Username);
+    }
+
+    [Fact]
+    public async Task Handle_ExcludesNonSearchableUsers()
+    {
+        var users = new FakeUserRepository();
+        users.Users.Add(MakeUser("mayag"));
+        users.Users.Add(MakeUser("mayahidden", isSearchable: false));
 
         var handler = new SearchUsersQueryHandler(users);
         var result = await handler.Handle(new SearchUsersQuery("maya", 1, 20), CancellationToken.None);

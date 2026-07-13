@@ -1,3 +1,5 @@
+using YouG.Application.Features.Settings.Dtos;
+
 namespace YouG.Application.Features.Profile.Dtos;
 
 /// <summary>The full profile — only ever returned for the authenticated user themselves.</summary>
@@ -10,4 +12,5 @@ public record ProfileDto(
     string? ProfilePictureUrl,
     string TimeZoneId,
     string FriendCode,
-    DateTimeOffset CreatedAt);
+    DateTimeOffset CreatedAt,
+    SettingsDto Settings);
