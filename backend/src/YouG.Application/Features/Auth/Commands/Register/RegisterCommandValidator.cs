@@ -1,4 +1,5 @@
 using FluentValidation;
+using YouG.Application.Common;
 
 namespace YouG.Application.Features.Auth.Commands.Register;
 
@@ -24,24 +25,7 @@ public class RegisterCommandValidator : AbstractValidator<RegisterCommand>
 
         RuleFor(x => x.TimeZoneId)
             .NotEmpty()
-            .Must(BeAValidTimeZone)
+            .Must(TimeZoneValidation.IsValidIanaTimeZone)
             .WithMessage("TimeZoneId must be a valid IANA time zone identifier.");
-    }
-
-    private static bool BeAValidTimeZone(string timeZoneId)
-    {
-        try
-        {
-            TimeZoneInfo.FindSystemTimeZoneById(timeZoneId);
-            return true;
-        }
-        catch (TimeZoneNotFoundException)
-        {
-            return false;
-        }
-        catch (InvalidTimeZoneException)
-        {
-            return false;
-        }
     }
 }
