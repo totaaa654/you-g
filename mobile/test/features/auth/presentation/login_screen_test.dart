@@ -24,6 +24,7 @@ void main() {
     await tester.pumpWidget(_wrap(FakeAuthRepository()));
     await tester.pumpAndSettle();
 
+    await tester.ensureVisible(find.text('Log in'));
     await tester.tap(find.text('Log in'));
     await tester.pump();
 
@@ -37,6 +38,7 @@ void main() {
 
     await tester.enterText(find.widgetWithText(TextFormField, 'Email'), 'maya@example.com');
     await tester.enterText(find.widgetWithText(TextFormField, 'Password'), 'correct-horse-battery');
+    await tester.ensureVisible(find.text('Log in'));
     await tester.tap(find.text('Log in'));
     await tester.pumpAndSettle();
 
@@ -49,6 +51,7 @@ void main() {
 
     await tester.enterText(find.widgetWithText(TextFormField, 'Email'), 'maya@example.com');
     await tester.enterText(find.widgetWithText(TextFormField, 'Password'), 'wrong-password');
+    await tester.ensureVisible(find.text('Log in'));
     await tester.tap(find.text('Log in'));
     await tester.pumpAndSettle();
 
@@ -59,7 +62,8 @@ void main() {
     await tester.pumpWidget(_wrap(FakeAuthRepository()));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text("Don't have an account? Sign up"));
+    await tester.ensureVisible(find.text('Sign up'));
+    await tester.tap(find.text('Sign up'));
     await tester.pumpAndSettle();
 
     expect(find.text('Register Screen'), findsOneWidget);
