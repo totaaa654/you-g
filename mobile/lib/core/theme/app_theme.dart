@@ -77,7 +77,7 @@ class AppTheme {
         backgroundColor: AppColors.navy,
         foregroundColor: Colors.white,
       ),
-      pageTransitionsTheme: const PageTransitionsTheme(
+      pageTransitionsTheme: PageTransitionsTheme(
         builders: {
           TargetPlatform.android: CupertinoPageTransitionsBuilder(),
           TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
