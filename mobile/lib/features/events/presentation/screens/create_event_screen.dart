@@ -33,8 +33,6 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
   final _descriptionController = TextEditingController();
   final _locationNameController = TextEditingController();
   final _locationAddressController = TextEditingController();
-  final _latController = TextEditingController();
-  final _lngController = TextEditingController();
   final _maxAttendeesController = TextEditingController();
 
   late DateTime _date = widget.initialDate ?? DateTime.now().add(const Duration(days: 1));
@@ -49,8 +47,6 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
     _descriptionController.dispose();
     _locationNameController.dispose();
     _locationAddressController.dispose();
-    _latController.dispose();
-    _lngController.dispose();
     _maxAttendeesController.dispose();
     super.dispose();
   }
@@ -87,8 +83,11 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
             initialEndUtc: _combine(_endTime),
             initialLocationName: _locationNameController.text.trim().isEmpty ? null : _locationNameController.text.trim(),
             initialLocationAddress: _locationAddressController.text.trim().isEmpty ? null : _locationAddressController.text.trim(),
-            initialLocationLatitude: double.tryParse(_latController.text.trim()),
-            initialLocationLongitude: double.tryParse(_lngController.text.trim()),
+            // No map picker yet (see the placeholder below) - the backend only requires
+            // coordinates alongside a location name, so this is a honest placeholder value
+            // until a real picker exists, not a real "location".
+            initialLocationLatitude: _locationNameController.text.trim().isEmpty ? null : 0,
+            initialLocationLongitude: _locationNameController.text.trim().isEmpty ? null : 0,
           );
       ref.invalidate(groupEventsProvider(widget.groupId));
       if (!mounted) return;
@@ -194,26 +193,6 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
                 TextFormField(
                   controller: _locationAddressController,
                   decoration: const InputDecoration(labelText: 'Address (optional)'),
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextFormField(
-                        controller: _latController,
-                        keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
-                        decoration: const InputDecoration(labelText: 'Latitude'),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: TextFormField(
-                        controller: _lngController,
-                        keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
-                        decoration: const InputDecoration(labelText: 'Longitude'),
-                      ),
-                    ),
-                  ],
                 ),
                 const SizedBox(height: 20),
                 groupAsync.when(
