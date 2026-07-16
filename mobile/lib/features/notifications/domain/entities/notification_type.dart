@@ -1,9 +1,22 @@
-/// Mirrors the backend's `NotificationType` enum exactly — kept consistent even though
-/// there's no Notifications backend yet, so wiring the real API later is a data-source swap,
-/// not a redesign.
+/// Mirrors the backend's `NotificationType` enum exactly (serialized as a JSON string).
 enum NotificationType {
   friendRequest,
   groupInvite,
   eventReminder,
-  scheduleUpdate,
+  scheduleUpdate;
+
+  static NotificationType fromJson(String value) => switch (value) {
+        'FriendRequest' => NotificationType.friendRequest,
+        'GroupInvite' => NotificationType.groupInvite,
+        'EventReminder' => NotificationType.eventReminder,
+        'ScheduleUpdate' => NotificationType.scheduleUpdate,
+        _ => throw ArgumentError('Unknown NotificationType: $value'),
+      };
+
+  String toJson() => switch (this) {
+        NotificationType.friendRequest => 'FriendRequest',
+        NotificationType.groupInvite => 'GroupInvite',
+        NotificationType.eventReminder => 'EventReminder',
+        NotificationType.scheduleUpdate => 'ScheduleUpdate',
+      };
 }

@@ -16,7 +16,9 @@ public class RespondToGroupJoinRequestCommandHandlerTests
         var adminId = Guid.CreateVersion7();
         var requesterId = Guid.CreateVersion7();
 
-        var members = new FakeGroupMemberRepository(new FakeGroupRepository());
+        var groups = new FakeGroupRepository();
+        groups.Groups.Add(new Group { Id = groupId, Name = "Test Group", CreatedByUserId = adminId, CreatedAt = now, UpdatedAt = now });
+        var members = new FakeGroupMemberRepository(groups);
         members.Members.Add(new GroupMember { GroupId = groupId, UserId = adminId, Role = GroupRole.Admin });
 
         var joinRequests = new FakeGroupJoinRequestRepository();
@@ -24,7 +26,8 @@ public class RespondToGroupJoinRequestCommandHandlerTests
         joinRequests.Requests.Add(request);
 
         var handler = new RespondToGroupJoinRequestCommandHandler(
-            members, joinRequests, new FakeUnitOfWork(), new FakeCurrentUserService(adminId), new FakeDateTimeProvider(now));
+            groups, members, joinRequests, new FakeUnitOfWork(), new FakeCurrentUserService(adminId), new FakeDateTimeProvider(now),
+            new FakeNotificationDispatcher());
 
         await handler.Handle(new RespondToGroupJoinRequestCommand(groupId, request.Id, GroupJoinRequestStatus.Accepted), CancellationToken.None);
 
@@ -50,7 +53,8 @@ public class RespondToGroupJoinRequestCommandHandlerTests
         joinRequests.Requests.Add(request);
 
         var handler = new RespondToGroupJoinRequestCommandHandler(
-            members, joinRequests, new FakeUnitOfWork(), new FakeCurrentUserService(adminId), new FakeDateTimeProvider(now));
+            new FakeGroupRepository(), members, joinRequests, new FakeUnitOfWork(), new FakeCurrentUserService(adminId),
+            new FakeDateTimeProvider(now), new FakeNotificationDispatcher());
 
         await handler.Handle(new RespondToGroupJoinRequestCommand(groupId, request.Id, GroupJoinRequestStatus.Declined), CancellationToken.None);
 
@@ -72,7 +76,8 @@ public class RespondToGroupJoinRequestCommandHandlerTests
         joinRequests.Requests.Add(request);
 
         var handler = new RespondToGroupJoinRequestCommandHandler(
-            members, joinRequests, new FakeUnitOfWork(), new FakeCurrentUserService(memberId), new FakeDateTimeProvider(DateTimeOffset.UtcNow));
+            new FakeGroupRepository(), members, joinRequests, new FakeUnitOfWork(), new FakeCurrentUserService(memberId),
+            new FakeDateTimeProvider(DateTimeOffset.UtcNow), new FakeNotificationDispatcher());
 
         await Assert.ThrowsAsync<ForbiddenException>(
             () => handler.Handle(new RespondToGroupJoinRequestCommand(groupId, request.Id, GroupJoinRequestStatus.Accepted), CancellationToken.None));
@@ -96,7 +101,8 @@ public class RespondToGroupJoinRequestCommandHandlerTests
         joinRequests.Requests.Add(request);
 
         var handler = new RespondToGroupJoinRequestCommandHandler(
-            members, joinRequests, new FakeUnitOfWork(), new FakeCurrentUserService(adminId), new FakeDateTimeProvider(now));
+            new FakeGroupRepository(), members, joinRequests, new FakeUnitOfWork(), new FakeCurrentUserService(adminId),
+            new FakeDateTimeProvider(now), new FakeNotificationDispatcher());
 
         await Assert.ThrowsAsync<ConflictException>(
             () => handler.Handle(new RespondToGroupJoinRequestCommand(groupId, request.Id, GroupJoinRequestStatus.Declined), CancellationToken.None));

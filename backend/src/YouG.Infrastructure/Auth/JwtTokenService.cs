@@ -49,4 +49,6 @@ public class JwtTokenService(IOptions<JwtSettings> settings) : ITokenService
         var bytes = SHA256.HashData(Encoding.UTF8.GetBytes(rawToken));
         return Convert.ToHexString(bytes);
     }
+
+    public string GenerateOtpCode() => RandomNumberGenerator.GetInt32(0, 1_000_000).ToString("D6");
 }

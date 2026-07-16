@@ -11,10 +11,13 @@ public class CreateEventCommandHandler(
     IEventRepository eventRepository,
     IEventTimeOptionRepository timeOptionRepository,
     IEventLocationOptionRepository locationOptionRepository,
+    IGroupRepository groupRepository,
     IGroupMemberRepository groupMemberRepository,
+    IUserRepository userRepository,
     IUnitOfWork unitOfWork,
     ICurrentUserService currentUser,
-    IDateTimeProvider dateTimeProvider) : IRequestHandler<CreateEventCommand, EventDto>
+    IDateTimeProvider dateTimeProvider,
+    INotificationDispatcher notificationDispatcher) : IRequestHandler<CreateEventCommand, EventDto>
 {
     public async Task<EventDto> Handle(CreateEventCommand request, CancellationToken cancellationToken)
     {
@@ -81,6 +84,22 @@ public class CreateEventCommandHandler(
             @event.Status = EventStatus.Confirmed;
 
             await unitOfWork.SaveChangesAsync(cancellationToken);
+        }
+
+        var group = await groupRepository.GetByIdAsync(request.GroupId, cancellationToken);
+        var organizer = await userRepository.GetByIdAsync(currentUser.UserId, cancellationToken);
+
+        if (group is not null && organizer is not null)
+        {
+            var members = await groupMemberRepository.GetMembersByGroupIdAsync(request.GroupId, cancellationToken);
+            foreach (var member in members.Where(m => m.UserId != currentUser.UserId))
+            {
+                await notificationDispatcher.DispatchAsync(
+                    member.UserId, NotificationType.ScheduleUpdate, $"New event in {group.Name}",
+                    $"{organizer.DisplayName} proposed \"{@event.Title}\".",
+                    new Dictionary<string, string> { ["eventId"] = @event.Id.ToString(), ["groupId"] = group.Id.ToString() },
+                    cancellationToken);
+            }
         }
 
         return new EventDto(

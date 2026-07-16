@@ -39,7 +39,8 @@ public class JoinGroupViaInviteCommandHandlerTests
         var joinRequests = new FakeGroupJoinRequestRepository();
 
         var handler = new JoinGroupViaInviteCommandHandler(
-            groups, members, links, joinRequests, new FakeUnitOfWork(), new FakeCurrentUserService(callerId), new FakeDateTimeProvider(now));
+            groups, members, links, joinRequests, new FakeUserRepository(), new FakeUnitOfWork(),
+            new FakeCurrentUserService(callerId), new FakeDateTimeProvider(now), new FakeNotificationDispatcher());
 
         return (handler, members, joinRequests, group);
     }

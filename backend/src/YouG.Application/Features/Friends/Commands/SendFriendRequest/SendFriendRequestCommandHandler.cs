@@ -13,7 +13,8 @@ public class SendFriendRequestCommandHandler(
     IUserRepository userRepository,
     IUnitOfWork unitOfWork,
     ICurrentUserService currentUser,
-    IDateTimeProvider dateTimeProvider) : IRequestHandler<SendFriendRequestCommand, FriendRequestDto>
+    IDateTimeProvider dateTimeProvider,
+    INotificationDispatcher notificationDispatcher) : IRequestHandler<SendFriendRequestCommand, FriendRequestDto>
 {
     public async Task<FriendRequestDto> Handle(SendFriendRequestCommand request, CancellationToken cancellationToken)
     {
@@ -38,6 +39,8 @@ public class SendFriendRequestCommandHandler(
 
         var now = dateTimeProvider.UtcNow;
         var existing = await friendRequestRepository.GetBetweenAsync(currentUser.UserId, target.Id, cancellationToken);
+        var requester = await userRepository.GetByIdAsync(currentUser.UserId, cancellationToken)
+            ?? throw new NotFoundException("User not found.");
 
         if (existing is null)
         {
@@ -51,6 +54,11 @@ public class SendFriendRequestCommandHandler(
 
             friendRequestRepository.Add(created);
             await unitOfWork.SaveChangesAsync(cancellationToken);
+
+            await notificationDispatcher.DispatchAsync(
+                target.Id, NotificationType.FriendRequest, "New friend request",
+                $"{requester.DisplayName} sent you a friend request.",
+                new Dictionary<string, string> { ["friendRequestId"] = created.Id.ToString() }, cancellationToken);
 
             return new FriendRequestDto(created.Id, target.ToPublicProfileDto(), created.Status, created.CreatedAt);
         }
@@ -72,6 +80,11 @@ public class SendFriendRequestCommandHandler(
             existing.RespondedAt = now;
             await unitOfWork.SaveChangesAsync(cancellationToken);
 
+            await notificationDispatcher.DispatchAsync(
+                existing.RequesterId, NotificationType.FriendRequest, "Friend request accepted",
+                $"{requester.DisplayName} accepted your friend request.",
+                new Dictionary<string, string> { ["friendRequestId"] = existing.Id.ToString() }, cancellationToken);
+
             return new FriendRequestDto(existing.Id, target.ToPublicProfileDto(), existing.Status, existing.CreatedAt);
         }
 
@@ -85,6 +98,11 @@ public class SendFriendRequestCommandHandler(
         existing.AddresseeFavorited = false;
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
+
+        await notificationDispatcher.DispatchAsync(
+            target.Id, NotificationType.FriendRequest, "New friend request",
+            $"{requester.DisplayName} sent you a friend request.",
+            new Dictionary<string, string> { ["friendRequestId"] = existing.Id.ToString() }, cancellationToken);
 
         return new FriendRequestDto(existing.Id, target.ToPublicProfileDto(), existing.Status, existing.CreatedAt);
     }

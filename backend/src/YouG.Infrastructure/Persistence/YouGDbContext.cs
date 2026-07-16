@@ -7,6 +7,7 @@ public class YouGDbContext(DbContextOptions<YouGDbContext> options) : DbContext(
 {
     public DbSet<User> Users => Set<User>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
+    public DbSet<PasswordResetToken> PasswordResetTokens => Set<PasswordResetToken>();
     public DbSet<FriendRequest> FriendRequests => Set<FriendRequest>();
     public DbSet<BlockedUser> BlockedUsers => Set<BlockedUser>();
     public DbSet<Group> Groups => Set<Group>();

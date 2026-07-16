@@ -11,7 +11,8 @@ public class RespondToFriendRequestCommandHandler(
     IUserRepository userRepository,
     IUnitOfWork unitOfWork,
     ICurrentUserService currentUser,
-    IDateTimeProvider dateTimeProvider) : IRequestHandler<RespondToFriendRequestCommand, FriendRequestDto>
+    IDateTimeProvider dateTimeProvider,
+    INotificationDispatcher notificationDispatcher) : IRequestHandler<RespondToFriendRequestCommand, FriendRequestDto>
 {
     public async Task<FriendRequestDto> Handle(RespondToFriendRequestCommand request, CancellationToken cancellationToken)
     {
@@ -37,6 +38,17 @@ public class RespondToFriendRequestCommandHandler(
 
         var requester = await userRepository.GetByIdAsync(friendRequest.RequesterId, cancellationToken)
             ?? throw new NotFoundException("User not found.");
+
+        if (friendRequest.Status == FriendRequestStatus.Accepted)
+        {
+            var addressee = await userRepository.GetByIdAsync(currentUser.UserId, cancellationToken)
+                ?? throw new NotFoundException("User not found.");
+
+            await notificationDispatcher.DispatchAsync(
+                requester.Id, NotificationType.FriendRequest, "Friend request accepted",
+                $"{addressee.DisplayName} accepted your friend request.",
+                new Dictionary<string, string> { ["friendRequestId"] = friendRequest.Id.ToString() }, cancellationToken);
+        }
 
         return new FriendRequestDto(friendRequest.Id, requester.ToPublicProfileDto(), friendRequest.Status, friendRequest.CreatedAt);
     }
