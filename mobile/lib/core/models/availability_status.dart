@@ -28,37 +28,3 @@ enum AvailabilityStatus {
         AvailabilityStatus.unknown => 'Unknown',
       };
 }
-
-/// Mirrors the backend's `Daypart` enum exactly.
-enum Daypart {
-  morning,
-  afternoon,
-  evening,
-  night,
-  wholeDay;
-
-  static Daypart fromJson(String value) => switch (value) {
-        'Morning' => Daypart.morning,
-        'Afternoon' => Daypart.afternoon,
-        'Evening' => Daypart.evening,
-        'Night' => Daypart.night,
-        'WholeDay' => Daypart.wholeDay,
-        _ => throw ArgumentError('Unknown Daypart: $value'),
-      };
-
-  String toJson() => switch (this) {
-        Daypart.morning => 'Morning',
-        Daypart.afternoon => 'Afternoon',
-        Daypart.evening => 'Evening',
-        Daypart.night => 'Night',
-        Daypart.wholeDay => 'WholeDay',
-      };
-
-  String get label => switch (this) {
-        Daypart.morning => 'Morning',
-        Daypart.afternoon => 'Afternoon',
-        Daypart.evening => 'Evening',
-        Daypart.night => 'Night',
-        Daypart.wholeDay => 'All day',
-      };
-}

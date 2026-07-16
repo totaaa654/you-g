@@ -137,16 +137,9 @@ public class GroupsController(ISender sender) : ControllerBase
         [FromQuery] DateOnly from,
         [FromQuery] DateOnly to,
         [FromQuery] bool weekendOnly,
-        [FromQuery] string? preferredDayparts,
         CancellationToken cancellationToken)
     {
-        var dayparts = string.IsNullOrWhiteSpace(preferredDayparts)
-            ? null
-            : preferredDayparts.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-                .Select(Enum.Parse<Domain.Enums.Daypart>)
-                .ToList();
-
-        var result = await sender.Send(new GetGroupOverlapQuery(id, from, to, weekendOnly, dayparts), cancellationToken);
+        var result = await sender.Send(new GetGroupOverlapQuery(id, from, to, weekendOnly), cancellationToken);
         return Ok(result);
     }
 

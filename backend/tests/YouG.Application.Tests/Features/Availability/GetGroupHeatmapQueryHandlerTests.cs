@@ -20,8 +20,8 @@ public class GetGroupHeatmapQueryHandlerTests
         members.Members.Add(new GroupMember { GroupId = groupId, UserId = userB, Role = GroupRole.Member });
 
         var instances = new FakeAvailabilityInstanceRepository();
-        instances.Instances.Add(new AvailabilityInstance { UserId = userA, Date = date, Daypart = Daypart.Evening, Status = AvailabilityStatus.Available });
-        instances.Instances.Add(new AvailabilityInstance { UserId = userB, Date = date, Daypart = Daypart.Evening, Status = AvailabilityStatus.Maybe });
+        instances.Instances.Add(new AvailabilityInstance { UserId = userA, Date = date, StartTime = new TimeOnly(18, 0), Status = AvailabilityStatus.Available });
+        instances.Instances.Add(new AvailabilityInstance { UserId = userB, Date = date, StartTime = new TimeOnly(18, 0), Status = AvailabilityStatus.Maybe });
 
         var handler = new GetGroupHeatmapQueryHandler(members, instances, new FakeCurrentUserService(userA));
 

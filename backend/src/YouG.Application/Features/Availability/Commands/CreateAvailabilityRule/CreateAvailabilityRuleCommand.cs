@@ -6,7 +6,7 @@ namespace YouG.Application.Features.Availability.Commands.CreateAvailabilityRule
 
 public record CreateAvailabilityRuleCommand(
     DayOfWeek DayOfWeek,
-    Daypart Daypart,
+    TimeOnly StartTime,
     AvailabilityStatus Status,
     DateOnly EffectiveFrom,
     DateOnly? EffectiveUntil) : IRequest<AvailabilityRuleDto>;

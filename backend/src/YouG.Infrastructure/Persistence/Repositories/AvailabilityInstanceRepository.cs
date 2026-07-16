@@ -1,15 +1,14 @@
 using Microsoft.EntityFrameworkCore;
 using YouG.Application.Common.Interfaces;
 using YouG.Domain.Entities;
-using YouG.Domain.Enums;
 
 namespace YouG.Infrastructure.Persistence.Repositories;
 
 public class AvailabilityInstanceRepository(YouGDbContext dbContext) : IAvailabilityInstanceRepository
 {
-    public Task<AvailabilityInstance?> GetAsync(Guid userId, DateOnly date, Daypart daypart, CancellationToken cancellationToken) =>
+    public Task<AvailabilityInstance?> GetAsync(Guid userId, DateOnly date, TimeOnly startTime, CancellationToken cancellationToken) =>
         dbContext.AvailabilityInstances
-            .FirstOrDefaultAsync(i => i.UserId == userId && i.Date == date && i.Daypart == daypart, cancellationToken);
+            .FirstOrDefaultAsync(i => i.UserId == userId && i.Date == date && i.StartTime == startTime, cancellationToken);
 
     public Task<List<AvailabilityInstance>> GetForUserInRangeAsync(
         Guid userId, DateOnly from, DateOnly to, CancellationToken cancellationToken) =>

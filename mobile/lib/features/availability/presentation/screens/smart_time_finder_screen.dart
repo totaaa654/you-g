@@ -10,6 +10,7 @@ import '../../../../core/widgets/mascot.dart';
 import '../../../../core/widgets/profile_avatar.dart';
 import '../../../groups/domain/entities/group_member.dart';
 import '../../../groups/presentation/providers/groups_providers.dart';
+import '../../domain/entities/merged_overlap_window.dart';
 import '../providers/availability_providers.dart';
 import '../widgets/overlap_window_card.dart';
 
@@ -51,7 +52,8 @@ class _SmartTimeFinderScreenState extends ConsumerState<SmartTimeFinderScreen> {
         ),
         error: (_, _) =>
             const EmptyState(icon: Icons.error_outline_rounded, title: "Couldn't compute overlap", message: 'Try again in a moment.'),
-        data: (windows) {
+        data: (rawWindows) {
+          final windows = mergeOverlapWindows(rawWindows);
           if (windows.isEmpty) {
             return const EmptyState(
               icon: Icons.auto_awesome_outlined,
@@ -123,7 +125,7 @@ class _SmartTimeFinderScreenState extends ConsumerState<SmartTimeFinderScreen> {
                 icon: Icons.add_circle_outline_rounded,
                 onPressed: () => context.push(
                   '/groups/${widget.groupId}/events/create'
-                  '?date=${best.date.toIso8601String()}&daypart=${best.daypart.toJson()}',
+                  '?date=${best.date.toIso8601String()}&startTime=${best.startTime.toJson()}',
                 ),
               ),
               if (alternatives.isNotEmpty) ...[
@@ -135,7 +137,7 @@ class _SmartTimeFinderScreenState extends ConsumerState<SmartTimeFinderScreen> {
                     window: window,
                     onTap: () => context.push(
                       '/groups/${widget.groupId}/events/create'
-                      '?date=${window.date.toIso8601String()}&daypart=${window.daypart.toJson()}',
+                      '?date=${window.date.toIso8601String()}&startTime=${window.startTime.toJson()}',
                     ),
                   ),
                   const SizedBox(height: 10),

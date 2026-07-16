@@ -10,7 +10,9 @@ public class UpsertAvailabilityInstancesCommandValidator : AbstractValidator<Ups
 
         RuleForEach(x => x.Instances).ChildRules(instance =>
         {
-            instance.RuleFor(i => i.Daypart).IsInEnum();
+            instance.RuleFor(i => i.StartTime)
+                .Must(t => t.Minute is 0 or 30 && t.Second == 0)
+                .WithMessage("StartTime must fall on a 30-minute boundary.");
             instance.RuleFor(i => i.Status).IsInEnum();
         });
     }

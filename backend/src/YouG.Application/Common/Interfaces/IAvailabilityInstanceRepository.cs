@@ -4,7 +4,7 @@ namespace YouG.Application.Common.Interfaces;
 
 public interface IAvailabilityInstanceRepository
 {
-    Task<AvailabilityInstance?> GetAsync(Guid userId, DateOnly date, Domain.Enums.Daypart daypart, CancellationToken cancellationToken);
+    Task<AvailabilityInstance?> GetAsync(Guid userId, DateOnly date, TimeOnly startTime, CancellationToken cancellationToken);
 
     Task<List<AvailabilityInstance>> GetForUserInRangeAsync(
         Guid userId, DateOnly from, DateOnly to, CancellationToken cancellationToken);

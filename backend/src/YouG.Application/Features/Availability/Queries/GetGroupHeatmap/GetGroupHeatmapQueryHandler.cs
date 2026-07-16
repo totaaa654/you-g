@@ -26,10 +26,10 @@ public class GetGroupHeatmapQueryHandler(
         // GridView with no client-side reshape (docs/04-API-DESIGN.md Section 3.3).
         var cells = instances
             .Where(i => i.Status == AvailabilityStatus.Available)
-            .GroupBy(i => (i.Date, i.Daypart))
-            .Select(g => new HeatmapCellDto(g.Key.Date, g.Key.Daypart, g.Count()))
+            .GroupBy(i => (i.Date, i.StartTime))
+            .Select(g => new HeatmapCellDto(g.Key.Date, g.Key.StartTime, g.Count()))
             .OrderBy(c => c.Date)
-            .ThenBy(c => c.Daypart)
+            .ThenBy(c => c.StartTime)
             .ToList();
 
         return new HeatmapResultDto(request.GroupId, request.From, request.To, cells, memberIds.Count);

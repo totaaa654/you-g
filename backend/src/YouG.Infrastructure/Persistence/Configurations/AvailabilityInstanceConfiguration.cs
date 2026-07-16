@@ -10,11 +10,10 @@ public class AvailabilityInstanceConfiguration : IEntityTypeConfiguration<Availa
     {
         builder.ToTable("AvailabilityInstances");
 
-        builder.Property(i => i.Daypart).HasConversion<short>();
         builder.Property(i => i.Status).HasConversion<short>();
 
         // Upsert target for the recurrence sweep, and unique-per-slot invariant.
-        builder.HasIndex(i => new { i.UserId, i.Date, i.Daypart }).IsUnique();
+        builder.HasIndex(i => new { i.UserId, i.Date, i.StartTime }).IsUnique();
 
         // Critical path for the Smart Time Finder overlap query (docs/03-DATABASE.md Section 4).
         builder.HasIndex(i => new { i.UserId, i.Date });

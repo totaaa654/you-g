@@ -72,7 +72,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           return CreateEventScreen(
             groupId: state.pathParameters['id']!,
             initialDate: dateParam != null ? DateTime.tryParse(dateParam) : null,
-            initialDaypart: state.uri.queryParameters['daypart'],
+            initialStartTime: state.uri.queryParameters['startTime'],
           );
         },
       ),

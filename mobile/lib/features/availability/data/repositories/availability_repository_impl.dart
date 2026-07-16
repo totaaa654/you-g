@@ -1,4 +1,5 @@
 import '../../../../core/models/availability_status.dart';
+import '../../../../core/models/time_slot.dart';
 import '../../domain/entities/availability_instance.dart';
 import '../../domain/entities/overlap_window.dart';
 import '../../domain/repositories/availability_repository.dart';
@@ -22,7 +23,7 @@ class AvailabilityRepositoryImpl implements AvailabilityRepository {
         for (final instance in instances)
           {
             'date': dateOnly(instance.date),
-            'daypart': instance.daypart.toJson(),
+            'startTime': instance.startTime.toJson(),
             'status': instance.status.toJson(),
           },
       ]);
@@ -33,27 +34,20 @@ class AvailabilityRepositoryImpl implements AvailabilityRepository {
     required DateTime from,
     required DateTime to,
     bool weekendOnly = false,
-    List<Daypart>? preferredDayparts,
   }) async {
-    final result = await _remoteDataSource.getGroupOverlap(
-      groupId,
-      from: from,
-      to: to,
-      weekendOnly: weekendOnly,
-      preferredDayparts: preferredDayparts?.map((d) => d.toJson()).join(','),
-    );
+    final result = await _remoteDataSource.getGroupOverlap(groupId, from: from, to: to, weekendOnly: weekendOnly);
     return result.windows.map(_mapWindow).toList();
   }
 
   AvailabilityInstance _mapInstance(AvailabilityInstanceDto dto) => AvailabilityInstance(
         date: dto.date,
-        daypart: Daypart.fromJson(dto.daypart),
+        startTime: TimeSlot.fromJson(dto.startTime),
         status: AvailabilityStatus.fromJson(dto.status),
       );
 
   OverlapWindow _mapWindow(OverlapWindowDto dto) => OverlapWindow(
         date: dto.date,
-        daypart: Daypart.fromJson(dto.daypart),
+        startTime: TimeSlot.fromJson(dto.startTime),
         availableUserIds: dto.availableUserIds,
         availableCount: dto.availableCount,
         totalMembers: dto.totalMembers,

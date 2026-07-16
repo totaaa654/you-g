@@ -20,7 +20,7 @@ public class CreateAvailabilityRuleCommandHandler(
         {
             UserId = currentUser.UserId,
             DayOfWeek = request.DayOfWeek,
-            Daypart = request.Daypart,
+            StartTime = request.StartTime,
             Status = request.Status,
             EffectiveFrom = request.EffectiveFrom,
             EffectiveUntil = request.EffectiveUntil,
@@ -35,6 +35,6 @@ public class CreateAvailabilityRuleCommandHandler(
         // next periodic sweep (docs/02-ARCHITECTURE.md Section 5.2).
         await materializationJob.RunForUserAsync(currentUser.UserId, cancellationToken);
 
-        return new AvailabilityRuleDto(rule.Id, rule.DayOfWeek, rule.Daypart, rule.Status, rule.EffectiveFrom, rule.EffectiveUntil);
+        return new AvailabilityRuleDto(rule.Id, rule.DayOfWeek, rule.StartTime, rule.Status, rule.EffectiveFrom, rule.EffectiveUntil);
     }
 }

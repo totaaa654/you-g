@@ -26,21 +26,20 @@ public class GetGroupOverlapQueryHandler(
         var windows = instances
             .Where(i => i.Status is AvailabilityStatus.Available or AvailabilityStatus.Maybe)
             .Where(i => !request.WeekendOnly || i.Date.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday)
-            .Where(i => request.PreferredDayparts is null || request.PreferredDayparts.Count == 0 || request.PreferredDayparts.Contains(i.Daypart))
-            .GroupBy(i => (i.Date, i.Daypart))
+            .GroupBy(i => (i.Date, i.StartTime))
             .Select(g =>
             {
                 var availableUserIds = g.Where(i => i.Status == AvailabilityStatus.Available).Select(i => i.UserId).ToList();
                 var maybeUserIds = g.Where(i => i.Status == AvailabilityStatus.Maybe).Select(i => i.UserId).ToList();
 
                 return new OverlapWindowDto(
-                    g.Key.Date, g.Key.Daypart, availableUserIds, availableUserIds.Count, totalMembers, maybeUserIds);
+                    g.Key.Date, g.Key.StartTime, availableUserIds, availableUserIds.Count, totalMembers, maybeUserIds);
             })
             // Ranked by overlap size descending (FR-3) — the client renders in this order rather
             // than re-sorting (docs/04-API-DESIGN.md Section 3.2).
             .OrderByDescending(w => w.AvailableCount)
             .ThenBy(w => w.Date)
-            .ThenBy(w => w.Daypart)
+            .ThenBy(w => w.StartTime)
             .ToList();
 
         return new OverlapResultDto(request.GroupId, windows);

@@ -16,7 +16,7 @@ public class UpsertAvailabilityInstancesCommandHandler(
 
         foreach (var upsert in request.Instances)
         {
-            var existing = await instanceRepository.GetAsync(currentUser.UserId, upsert.Date, upsert.Daypart, cancellationToken);
+            var existing = await instanceRepository.GetAsync(currentUser.UserId, upsert.Date, upsert.StartTime, cancellationToken);
 
             if (existing is null)
             {
@@ -24,7 +24,7 @@ public class UpsertAvailabilityInstancesCommandHandler(
                 {
                     UserId = currentUser.UserId,
                     Date = upsert.Date,
-                    Daypart = upsert.Daypart,
+                    StartTime = upsert.StartTime,
                     Status = upsert.Status,
                     SourceRuleId = null, // manual override
                     UpdatedAt = now

@@ -13,7 +13,7 @@ public class GetMyAvailabilityRulesQueryHandler(
         var rules = await ruleRepository.GetByUserIdAsync(currentUser.UserId, cancellationToken);
 
         return rules
-            .Select(r => new AvailabilityRuleDto(r.Id, r.DayOfWeek, r.Daypart, r.Status, r.EffectiveFrom, r.EffectiveUntil))
+            .Select(r => new AvailabilityRuleDto(r.Id, r.DayOfWeek, r.StartTime, r.Status, r.EffectiveFrom, r.EffectiveUntil))
             .ToList();
     }
 }

@@ -31,7 +31,7 @@ public class AvailabilityController(ISender sender) : ControllerBase
     public async Task<ActionResult<AvailabilityRuleDto>> CreateRule(CreateAvailabilityRuleRequest request, CancellationToken cancellationToken)
     {
         var result = await sender.Send(
-            new CreateAvailabilityRuleCommand(request.DayOfWeek, request.Daypart, request.Status, request.EffectiveFrom, request.EffectiveUntil),
+            new CreateAvailabilityRuleCommand(request.DayOfWeek, request.StartTime, request.Status, request.EffectiveFrom, request.EffectiveUntil),
             cancellationToken);
 
         return StatusCode(StatusCodes.Status201Created, result);
@@ -58,7 +58,7 @@ public class AvailabilityController(ISender sender) : ControllerBase
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> UpsertInstances(List<UpsertAvailabilityInstanceRequest> request, CancellationToken cancellationToken)
     {
-        var instances = request.Select(r => new AvailabilityInstanceUpsert(r.Date, r.Daypart, r.Status)).ToList();
+        var instances = request.Select(r => new AvailabilityInstanceUpsert(r.Date, r.StartTime, r.Status)).ToList();
         await sender.Send(new UpsertAvailabilityInstancesCommand(instances), cancellationToken);
         return NoContent();
     }

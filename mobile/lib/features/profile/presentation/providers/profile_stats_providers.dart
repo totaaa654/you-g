@@ -27,8 +27,8 @@ final eventsJoinedCountProvider = FutureProvider.autoDispose<int>((ref) async {
       .length;
 });
 
-/// Available dayparts / total dayparts set, over the next 7 days — a real, derived metric
-/// rather than a fabricated score (the backend has no such concept).
+/// Available slots / total slots set, over the next 7 days — a real, derived metric rather
+/// than a fabricated score (the backend has no such concept).
 final availabilityScoreProvider = FutureProvider.autoDispose<double?>((ref) async {
   ref.watch(authControllerProvider.select((s) => s.valueOrNull?.id));
   final now = DateTime.now();
