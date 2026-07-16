@@ -11,6 +11,7 @@ import '../../../../core/widgets/profile_avatar.dart';
 import '../../../auth/presentation/providers/auth_controller.dart';
 import '../../../events/presentation/providers/events_providers.dart';
 import '../../../events/presentation/widgets/event_tile.dart';
+import '../../../friends/presentation/providers/friends_providers.dart';
 import '../../domain/entities/group_join_request_response.dart';
 import '../../domain/entities/group_member.dart';
 import '../../domain/entities/group_role.dart';
@@ -45,6 +46,13 @@ class GroupDetailScreen extends ConsumerWidget {
 
           final events = eventsAsync.valueOrNull ?? const [];
           final joinRequests = isAdmin ? ref.watch(groupJoinRequestsProvider(groupId)).valueOrNull ?? const [] : const [];
+
+          final friendIds = (ref.watch(friendsListProvider).valueOrNull ?? const [])
+              .map((f) => f.profile.id)
+              .toSet();
+          final pendingFriendRequestIds = (ref.watch(outgoingFriendRequestsProvider).valueOrNull ?? const [])
+              .map((r) => r.profile.id)
+              .toSet();
 
           return RefreshIndicator(
             onRefresh: () async {
@@ -164,6 +172,38 @@ class GroupDetailScreen extends ConsumerWidget {
                             decoration: BoxDecoration(color: AppColors.fog, borderRadius: BorderRadius.circular(999)),
                             child: const Text('Admin', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: AppColors.navy)),
                           ),
+                        if (member.userId != currentUserId)
+                          if (friendIds.contains(member.userId))
+                            const Padding(
+                              padding: EdgeInsets.only(left: 4),
+                              child: Icon(Icons.check_circle_rounded, color: AppColors.availableGreen, size: 20),
+                            )
+                          else if (pendingFriendRequestIds.contains(member.userId))
+                            const Padding(
+                              padding: EdgeInsets.only(left: 4),
+                              child: Icon(Icons.hourglass_top_rounded, color: AppColors.unknownGray, size: 20),
+                            )
+                          else
+                            IconButton(
+                              icon: const Icon(Icons.person_add_alt_1_rounded, color: AppColors.navy),
+                              tooltip: 'Add friend',
+                              onPressed: () async {
+                                try {
+                                  await ref.read(friendsRepositoryProvider).sendFriendRequest(addresseeId: member.userId);
+                                  ref.invalidate(outgoingFriendRequestsProvider);
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context)
+                                        .showSnackBar(const SnackBar(content: Text('Friend request sent.')));
+                                  }
+                                } catch (_) {
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(content: Text("Couldn't send that request. Try again.")),
+                                    );
+                                  }
+                                }
+                              },
+                            ),
                         if (isAdmin && member.userId != currentUserId)
                           PopupMenuButton<String>(
                             icon: const Icon(Icons.more_vert_rounded, color: AppColors.unknownGray),
