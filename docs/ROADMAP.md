@@ -8,8 +8,8 @@ Tracks phase completion. Updated as we go. This is the source of truth for "wher
 | 2 | System architecture, folder structure, tech stack justification | ✅ Signed off |
 | 3 | Database design, ER diagram, indexing | ✅ Signed off |
 | 4 | REST API design, DTOs, versioning | ✅ Signed off |
-| 5 | Backend development (.NET 9) | 🟡 In progress — core loop (auth/groups/availability/events) merged |
-| 6 | Flutter development | 🟡 In progress — scaffolding + auth vertical slice merged |
+| 5 | Backend development (.NET 9) | 🟡 In progress — core loop + group member management/join-requests merged; time-based availability rewrite open (PR #24) |
+| 6 | Flutter development | 🟡 In progress — all 11 post-login screens + group member management merged; time-based availability rewrite open (PR #24) |
 | 7 | Testing (unit/integration/widget) | ⬜ Not started |
 | 8 | DevOps (Docker, CI/CD, deployment) | ⬜ Not started |
 | 9 | Production hardening | ⬜ Not started |
@@ -42,6 +42,9 @@ Tracks phase completion. Updated as we go. This is the source of truth for "wher
 | 2026-07-13 | Google Sign-In setup fully deferred until Flutter app exists (Phase 6) | Mobile client IDs need a real app package name + signing key; half-configuring the Google Cloud project now would sit unfinished |
 | 2026-07-13 | Finish all remaining backend feature branches before returning to Flutter screens | User's explicit choice over the Flutter-first recommendation — avoids bouncing between two codebases; accepted tradeoff is not seeing a fuller working app until backend is fully done |
 | 2026-07-13 | Event-location maps use OpenStreetMap via `flutter_map`, not Google Maps SDK | User didn't want to attach a billing card to Google Cloud even though the free tier would likely cover a portfolio project's usage; OSM needs no API key or billing account at all. Backend is unaffected — lat/lng/address were already stored generically in the Events feature; this is a Flutter-only rendering choice |
+| 2026-07-16 | Invite links open to all members, not just admins — but a non-admin's link routes joiners through a new `GroupJoinRequest` approval step instead of instant membership | Wanted members to be able to invite people without needing an admin, but didn't want to remove admin control over who actually joins — admin-created links keep the original instant-join behavior unchanged |
+| 2026-07-16 | Kicked members' `EventAttendance`/`EventTimeVote`/`EventLocationVote` rows are filtered by current group membership at query time, not deleted on removal | Preserves history if the person is ever re-invited, while stopping a removed member's stale vote from continuing to affect a live event's confirmed time/location — found via manual testing, not caught by unit tests |
+| 2026-07-16 | Availability replaced fixed Morning/Afternoon/Evening/Night dayparts with 30-minute time slots (`TimeOnly StartTime` per row) | User explicitly asked for actual times instead of coarse dayparts, twice, after initially confirming the daypart-granularity decision from 2026-07-13 — superseded here. Overlap/heatmap engines needed no structural change, just finer-grained grouping. Existing dev `AvailabilityInstances`/`AvailabilityRules` rows were cleared as part of the migration (no valid daypart→time-slot mapping exists) |
 
 ## Repo & Branches
 Repo: https://github.com/totaaa654/you-g (public). `master` is protected — PRs required, `backend`/`mobile` CI checks must pass, no force-push/delete.
@@ -56,6 +59,10 @@ Branches created 2026-07-13 (all off `master`):
 - `feature/profile` — merged 2026-07-13 (PR #14)
 - `feature/friends` — merged 2026-07-13 (PR #16)
 - `feature/search-settings` — merged 2026-07-13 (PR #18)
+- `feature/local-dev-connectivity-fix` — merged 2026-07-13 (PR #21)
+- `feature/post-login-screens` — merged 2026-07-14 (PR #22)
+- `feature/group-member-management` — merged 2026-07-16 (PR #23)
+- `feature/time-based-availability` — open, not yet merged (PR #24)
 - `feature/maps`, `feature/notifications` — empty, not started
 
 ## Backend scaffolding (merged 2026-07-13, PR #2)
@@ -141,5 +148,30 @@ Dark mode, notification prefs, search-visibility toggle, unified search:
 - **Real bug caught before touching the dev database**: EF Core does not carry C# field initializers (`= true`) into migration `DEFAULT` clauses — the first-generated migration used `DEFAULT FALSE` for every new boolean, which would have silently opted every existing user out of notifications/search visibility. Caught by reading the generated migration SQL before applying it; fixed with explicit `HasDefaultValue(true)` in `UserConfiguration`, migration regenerated clean. This is now a standing thing to check on any migration adding a non-default-false column.
 - 5 new unit tests (88 total) + full manual verification against live Postgres with two real users — confirmed new-user defaults post-fix, settings round-trip, search-visibility exclusion, and all three search scopes
 
+## Local dev connectivity fix (merged 2026-07-13, PR #21)
+Bug-fix branch, no new features — the Flutter app couldn't reach the local backend at all:
+- Flutter was pointed at the wrong API port
+- Backend had no CORS policy for the Flutter web dev origin
+- Backend unconditionally redirected HTTP → HTTPS, which the emulator/web dev setup doesn't follow cleanly
+- All three fixed; this unblocked actually running the app end-to-end for the first time this session
+
+## Post-login Flutter screens (merged 2026-07-14, PR #22)
+Every screen after login — Home, Friends, Groups, Group Detail, Calendar, Smart Time Finder, Create Event, Event Details, Profile, Settings, Notifications, plus the bottom-nav shell:
+- Wired to the real, already-tested backend everywhere a capability exists; dummy data used only where none does (Notifications — no backend; Maps — manual-entry placeholder, no interactive picker)
+- Full reusable widget library (`AppButton`, `AppCard`, `ProfileAvatar`, `AvailabilityBadge`, `EmptyState`, `LoadingSkeleton`, `AppSearchBar`, `BottomNavShell`) matching the navy/gold/cream palette
+- `StatefulShellRoute.indexedStack` for the 5 persistent bottom-nav tabs; pushed routes outside the shell for detail/create screens
+- **CI-only failure, didn't reproduce locally**: `CupertinoPageTransitionsBuilder` failed to resolve on CI's Flutter 3.44.6 (local dev was pinned to 3.35.6, a version CI had drifted away from since CI floated on `channel: stable`). Fixed by pinning CI's Flutter version to match local and dropping the custom page-transition builders (cosmetic only, not worth chasing a moving-target SDK API)
+- **Real bug found via manual testing, not caught by static analysis**: several "my data" Riverpod providers (`myGroupsProvider`, `friendsListProvider`, `myProfileProvider`, etc.) had no reactive dependency on the logged-in user's identity, so switching accounts without a full app restart could show the previous account's data — compounded by the bottom-nav shell keeping every tab's widget tree alive. Fixed by watching the current user's ID as the first line of every affected provider's `build()`
+
+## Group member management + join-request approval (merged 2026-07-16, PR #23)
+Started as "let admins manage members" and grew into several real bugs found via manual multi-account testing:
+- Admin member management (kick, promote/demote) — the backend endpoints already existed from the Groups feature, just were never wired into the Flutter UI
+- Invite links opened to all members (previously admin-only); a non-admin's link now creates a `GroupJoinRequest` an admin must approve instead of joining instantly — new entity, migration, repository, two new endpoints, mirrors the existing `FriendRequest` accept/decline pattern
+- **Real bug**: Group Detail never listed the group's events at all — a leftover placeholder comment from before the Events feature existed, never revisited. A newly created event was invisible anywhere in the app until confirmed (Home only shows confirmed events)
+- **Real bug**: kicked members still showed as "Going" on events, and their vote could still count toward confirming a time/location, since `EventAttendance`/vote rows were tied only to `EventId`/`UserId` with no relationship to group membership. Fixed by filtering by current membership at query time (non-destructive, preserves history)
+- **Real bug**: `myGroupsProvider`'s cached `memberCount` (shown on the Groups tab tiles) never got invalidated after accepting a join request or kicking a member
+- Smaller UX fixes bundled in: add a friend directly from a group's member list, removed the redundant status pill on events, removed manual lat/lng entry from Create Event, group availability view added to Calendar (aggregate view of a chosen group, reusing the existing overlap endpoint), Home's suggested-meetup card refreshing immediately after you update your own availability
+- 8 new backend unit tests (98 total) + full manual multi-account verification (4 Chrome profiles running simultaneously)
+
 ## Next up
-Phase 5 (backend) and Phase 6 (Flutter) are both in progress in parallel. Backend now covers: auth, groups, availability/smart-time-finder, events/voting, profile, friends, search & settings. Flutter has scaffolding + a working auth flow. Remaining backend-only branches: Maps, Notifications — both need real external-service setup (Google Maps Platform, a push notification provider) before implementation can start.
+Phase 5 (backend) and Phase 6 (Flutter) are both in progress in parallel. Backend now covers: auth, groups (incl. member management/join-requests), availability/smart-time-finder, events/voting, profile, friends, search & settings. Flutter has every post-login screen wired to the real backend. `feature/time-based-availability` (PR #24) is open — replaces the daypart-granularity decision with real 30-minute time slots end to end (backend `TimeOnly` + migration, Flutter time-range picker, merged-window display) — pending manual click-through before merge. Remaining backend-only branches: Maps, Notifications — both need real external-service setup (Firebase for push; Maps needs no external service per the OSM decision) before implementation can start.
