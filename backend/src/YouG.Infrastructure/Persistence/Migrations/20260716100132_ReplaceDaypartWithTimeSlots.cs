@@ -11,6 +11,13 @@ namespace YouG.Infrastructure.Persistence.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            // Existing rows are keyed by Daypart, which has no valid mapping onto a single
+            // 30-minute StartTime (least of all "WholeDay") - and multiple old rows for the same
+            // user/date would otherwise collide on whatever default StartTime they're backfilled
+            // to, violating the new unique index below. Pre-launch dev data only, safe to clear.
+            migrationBuilder.Sql("DELETE FROM \"AvailabilityInstances\";");
+            migrationBuilder.Sql("DELETE FROM \"AvailabilityRules\";");
+
             migrationBuilder.DropIndex(
                 name: "IX_AvailabilityInstances_UserId_Date_Daypart",
                 table: "AvailabilityInstances");
