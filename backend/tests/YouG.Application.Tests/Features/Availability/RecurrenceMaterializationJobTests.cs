@@ -28,7 +28,7 @@ public class RecurrenceMaterializationJobTests
         {
             UserId = userId,
             DayOfWeek = DayOfWeek.Monday, // matches "Today"
-            Daypart = Daypart.Evening,
+            StartTime = new TimeOnly(18, 0),
             Status = AvailabilityStatus.Available,
             EffectiveFrom = DateOnly.FromDateTime(Today.Date)
         });
@@ -52,7 +52,7 @@ public class RecurrenceMaterializationJobTests
         {
             UserId = userId,
             DayOfWeek = DayOfWeek.Monday,
-            Daypart = Daypart.Evening,
+            StartTime = new TimeOnly(18, 0),
             Status = AvailabilityStatus.Available,
             EffectiveFrom = today
         };
@@ -63,7 +63,7 @@ public class RecurrenceMaterializationJobTests
         {
             UserId = userId,
             Date = today,
-            Daypart = Daypart.Evening,
+            StartTime = new TimeOnly(18, 0),
             Status = AvailabilityStatus.Busy,
             SourceRuleId = null,
             UpdatedAt = Today
@@ -90,7 +90,7 @@ public class RecurrenceMaterializationJobTests
         {
             UserId = userId,
             DayOfWeek = DayOfWeek.Monday,
-            Daypart = Daypart.Evening,
+            StartTime = new TimeOnly(18, 0),
             Status = AvailabilityStatus.Available, // rule now says Available
             EffectiveFrom = today
         };
@@ -101,7 +101,7 @@ public class RecurrenceMaterializationJobTests
         {
             UserId = userId,
             Date = today,
-            Daypart = Daypart.Evening,
+            StartTime = new TimeOnly(18, 0),
             Status = AvailabilityStatus.Busy,
             SourceRuleId = rule.Id,
             UpdatedAt = Today.AddDays(-1)
@@ -125,7 +125,7 @@ public class RecurrenceMaterializationJobTests
         {
             UserId = userId,
             DayOfWeek = DayOfWeek.Monday,
-            Daypart = Daypart.Evening,
+            StartTime = new TimeOnly(18, 0),
             Status = AvailabilityStatus.Available,
             EffectiveFrom = today.AddDays(14), // skip the first two Mondays
             EffectiveUntil = today.AddDays(28)  // stop after the fourth Monday (day 28)
@@ -155,8 +155,8 @@ public class RecurrenceMaterializationJobTests
         var userB = Guid.CreateVersion7();
         var today = DateOnly.FromDateTime(Today.Date);
 
-        rules.Rules.Add(new AvailabilityRule { UserId = userA, DayOfWeek = DayOfWeek.Monday, Daypart = Daypart.Morning, Status = AvailabilityStatus.Available, EffectiveFrom = today });
-        rules.Rules.Add(new AvailabilityRule { UserId = userB, DayOfWeek = DayOfWeek.Monday, Daypart = Daypart.Night, Status = AvailabilityStatus.Maybe, EffectiveFrom = today });
+        rules.Rules.Add(new AvailabilityRule { UserId = userA, DayOfWeek = DayOfWeek.Monday, StartTime = new TimeOnly(9, 0), Status = AvailabilityStatus.Available, EffectiveFrom = today });
+        rules.Rules.Add(new AvailabilityRule { UserId = userB, DayOfWeek = DayOfWeek.Monday, StartTime = new TimeOnly(21, 0), Status = AvailabilityStatus.Maybe, EffectiveFrom = today });
 
         await job.RunFullSweepAsync(CancellationToken.None);
 

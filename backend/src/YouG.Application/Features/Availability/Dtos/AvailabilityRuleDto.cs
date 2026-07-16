@@ -5,7 +5,7 @@ namespace YouG.Application.Features.Availability.Dtos;
 public record AvailabilityRuleDto(
     Guid Id,
     DayOfWeek DayOfWeek,
-    Daypart Daypart,
+    TimeOnly StartTime,
     AvailabilityStatus Status,
     DateOnly EffectiveFrom,
     DateOnly? EffectiveUntil);

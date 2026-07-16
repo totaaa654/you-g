@@ -11,7 +11,6 @@ public class AvailabilityRuleConfiguration : IEntityTypeConfiguration<Availabili
         builder.ToTable("AvailabilityRules");
 
         builder.Property(r => r.DayOfWeek).HasConversion<short>();
-        builder.Property(r => r.Daypart).HasConversion<short>();
         builder.Property(r => r.Status).HasConversion<short>();
 
         builder.HasIndex(r => r.UserId);

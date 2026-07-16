@@ -4,7 +4,7 @@ namespace YouG.API.Contracts.Availability;
 
 public record CreateAvailabilityRuleRequest(
     DayOfWeek DayOfWeek,
-    Daypart Daypart,
+    TimeOnly StartTime,
     AvailabilityStatus Status,
     DateOnly EffectiveFrom,
     DateOnly? EffectiveUntil);

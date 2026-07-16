@@ -48,7 +48,7 @@ public class RecurrenceMaterializationJob(
         var horizonEnd = today.AddDays(HorizonDays);
 
         var existingList = await instanceRepository.GetForUserInRangeAsync(userId, today, horizonEnd, cancellationToken);
-        var existingInstances = existingList.ToDictionary(i => (i.Date, i.Daypart));
+        var existingInstances = existingList.ToDictionary(i => (i.Date, i.StartTime));
 
         var now = dateTimeProvider.UtcNow;
 
@@ -66,7 +66,7 @@ public class RecurrenceMaterializationJob(
                     break;
                 }
 
-                var key = (date, rule.Daypart);
+                var key = (date, rule.StartTime);
 
                 if (existingInstances.TryGetValue(key, out var existing))
                 {
@@ -85,7 +85,7 @@ public class RecurrenceMaterializationJob(
                     {
                         UserId = userId,
                         Date = date,
-                        Daypart = rule.Daypart,
+                        StartTime = rule.StartTime,
                         Status = rule.Status,
                         SourceRuleId = rule.Id,
                         UpdatedAt = now

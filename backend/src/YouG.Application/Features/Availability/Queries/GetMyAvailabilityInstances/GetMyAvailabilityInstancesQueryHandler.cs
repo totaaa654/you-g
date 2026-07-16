@@ -14,7 +14,7 @@ public class GetMyAvailabilityInstancesQueryHandler(
             currentUser.UserId, request.From, request.To, cancellationToken);
 
         return instances
-            .Select(i => new AvailabilityInstanceDto(i.Date, i.Daypart, i.Status))
+            .Select(i => new AvailabilityInstanceDto(i.Date, i.StartTime, i.Status))
             .ToList();
     }
 }
