@@ -28,12 +28,15 @@ final groupByIdProvider = FutureProvider.family.autoDispose<Group, String>(
   (ref, groupId) => ref.watch(groupsRepositoryProvider).getGroupById(groupId),
 );
 
+// autoDispose so leaving Group Detail and coming back refetches — without it, a request
+// created after the admin's first visit to this screen would never show up until a full app
+// restart, since a plain (non-autoDispose) family provider's cache outlives the screen.
 final groupJoinRequestsProvider =
-    AsyncNotifierProvider.family<GroupJoinRequestsNotifier, List<GroupJoinRequest>, String>(
+    AsyncNotifierProvider.autoDispose.family<GroupJoinRequestsNotifier, List<GroupJoinRequest>, String>(
   GroupJoinRequestsNotifier.new,
 );
 
-class GroupJoinRequestsNotifier extends FamilyAsyncNotifier<List<GroupJoinRequest>, String> {
+class GroupJoinRequestsNotifier extends AutoDisposeFamilyAsyncNotifier<List<GroupJoinRequest>, String> {
   @override
   Future<List<GroupJoinRequest>> build(String groupId) =>
       ref.watch(groupsRepositoryProvider).getJoinRequests(groupId);
