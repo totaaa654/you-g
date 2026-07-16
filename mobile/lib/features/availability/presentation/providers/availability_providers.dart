@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/models/availability_status.dart';
 import '../../../../core/network/network_providers.dart';
 import '../../../auth/presentation/providers/auth_controller.dart';
+import '../../../home/presentation/providers/home_providers.dart';
 import '../../data/datasources/availability_remote_data_source.dart';
 import '../../data/repositories/availability_repository_impl.dart';
 import '../../domain/entities/availability_instance.dart';
@@ -57,6 +58,12 @@ class MyInstancesNotifier extends FamilyAsyncNotifier<List<AvailabilityInstance>
           instances.where((i) => !(_sameDay(i.date, date) && i.daypart == daypart)).toList();
       return [...withoutThis, updated];
     });
+
+    // Both are computed from availability, but neither watches this notifier directly, so
+    // they'd otherwise keep showing stale overlap/suggestions after you update your own
+    // availability until you leave and come back to those screens.
+    ref.invalidate(suggestedMeetupProvider);
+    ref.invalidate(groupOverlapProvider);
   }
 }
 
