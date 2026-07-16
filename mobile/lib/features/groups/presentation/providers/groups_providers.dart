@@ -43,6 +43,9 @@ class GroupJoinRequestsNotifier extends FamilyAsyncNotifier<List<GroupJoinReques
     state = state.whenData((requests) => requests.where((r) => r.id != requestId).toList());
     if (response == GroupJoinRequestResponse.accepted) {
       ref.invalidate(groupMembersProvider(groupId));
+      // Accepting changes the group's member count, which `myGroupsProvider` caches (shown on
+      // the Groups tab's tiles) — that cache has no other reason to know this happened.
+      await ref.read(myGroupsProvider.notifier).refresh();
     }
   }
 }

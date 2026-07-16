@@ -239,6 +239,9 @@ class GroupDetailScreen extends ConsumerWidget {
     try {
       if (action == 'remove') {
         await ref.read(groupsRepositoryProvider).removeMember(groupId, member.userId);
+        // Removing changes the group's member count, which `myGroupsProvider` caches (shown on
+        // the Groups tab's tiles) — that cache has no other reason to know this happened.
+        await ref.read(myGroupsProvider.notifier).refresh();
       } else {
         final newRole = member.role == GroupRole.admin ? GroupRole.member : GroupRole.admin;
         await ref.read(groupsRepositoryProvider).changeMemberRole(groupId, member.userId, newRole);
