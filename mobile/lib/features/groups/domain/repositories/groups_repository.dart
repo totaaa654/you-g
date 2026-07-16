@@ -1,7 +1,10 @@
 import '../entities/group.dart';
+import '../entities/group_join_request.dart';
+import '../entities/group_join_request_response.dart';
 import '../entities/group_member.dart';
 import '../entities/group_role.dart';
 import '../entities/invite_link.dart';
+import '../entities/join_group_result.dart';
 
 abstract class GroupsRepository {
   Future<List<Group>> getMyGroups();
@@ -22,5 +25,9 @@ abstract class GroupsRepository {
 
   Future<InviteLink> createInviteLink(String groupId);
 
-  Future<Group> joinByInviteCode(String code);
+  Future<JoinGroupResult> joinByInviteCode(String code);
+
+  Future<List<GroupJoinRequest>> getJoinRequests(String groupId);
+
+  Future<void> respondToJoinRequest(String groupId, String requestId, GroupJoinRequestResponse response);
 }

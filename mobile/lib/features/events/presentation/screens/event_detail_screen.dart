@@ -57,16 +57,7 @@ class EventDetailScreen extends ConsumerWidget {
                 flexibleSpace: FlexibleSpaceBar(
                   titlePadding: const EdgeInsets.only(left: 16, bottom: 16, right: 60),
                   title: Text(event.title, style: const TextStyle(color: Colors.white, fontSize: 16)),
-                  background: Container(
-                    decoration: const BoxDecoration(gradient: AppColors.backgroundGradient),
-                    child: Align(
-                      alignment: Alignment.bottomRight,
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: _StatusPill(status: event.status),
-                      ),
-                    ),
-                  ),
+                  background: Container(decoration: const BoxDecoration(gradient: AppColors.backgroundGradient)),
                 ),
               ),
               SliverList(
@@ -223,6 +214,7 @@ class EventDetailScreen extends ConsumerWidget {
                                           await ref
                                               .read(eventsRepositoryProvider)
                                               .confirmEvent(eventId, timeOptionId: timeId, locationOptionId: locationId);
+                                          ref.invalidate(groupEventsProvider(event.groupId));
                                           if (context.mounted) Navigator.of(context).pop();
                                           ref.read(eventDetailProvider(eventId).notifier).refresh();
                                         },
@@ -237,6 +229,7 @@ class EventDetailScreen extends ConsumerWidget {
                             variant: AppButtonVariant.text,
                             onPressed: () async {
                               await ref.read(eventsRepositoryProvider).cancelEvent(eventId);
+                              ref.invalidate(groupEventsProvider(event.groupId));
                               if (context.mounted) context.pop();
                             },
                           ),
@@ -250,27 +243,6 @@ class EventDetailScreen extends ConsumerWidget {
           );
         },
       ),
-    );
-  }
-}
-
-class _StatusPill extends StatelessWidget {
-  const _StatusPill({required this.status});
-
-  final EventStatus status;
-
-  @override
-  Widget build(BuildContext context) {
-    final (label, color) = switch (status) {
-      EventStatus.proposed => ('Voting in progress', AppColors.gold),
-      EventStatus.confirmed => ('Confirmed', AppColors.availableGreen),
-      EventStatus.cancelled => ('Cancelled', AppColors.busyRed),
-    };
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(999)),
-      child: Text(label, style: TextStyle(color: color, fontWeight: FontWeight.w700, fontSize: 12)),
     );
   }
 }

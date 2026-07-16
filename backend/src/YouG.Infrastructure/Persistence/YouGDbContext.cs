@@ -12,6 +12,7 @@ public class YouGDbContext(DbContextOptions<YouGDbContext> options) : DbContext(
     public DbSet<Group> Groups => Set<Group>();
     public DbSet<GroupMember> GroupMembers => Set<GroupMember>();
     public DbSet<GroupInviteLink> GroupInviteLinks => Set<GroupInviteLink>();
+    public DbSet<GroupJoinRequest> GroupJoinRequests => Set<GroupJoinRequest>();
     public DbSet<AvailabilityRule> AvailabilityRules => Set<AvailabilityRule>();
     public DbSet<AvailabilityInstance> AvailabilityInstances => Set<AvailabilityInstance>();
     public DbSet<Event> Events => Set<Event>();

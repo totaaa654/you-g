@@ -1,10 +1,16 @@
+import '../../../friends/data/dtos/public_profile_dto.dart';
+import '../../../friends/domain/entities/public_profile.dart';
 import '../../domain/entities/group.dart';
+import '../../domain/entities/group_join_request.dart';
+import '../../domain/entities/group_join_request_response.dart';
 import '../../domain/entities/group_member.dart';
 import '../../domain/entities/group_role.dart';
 import '../../domain/entities/invite_link.dart';
+import '../../domain/entities/join_group_result.dart';
 import '../../domain/repositories/groups_repository.dart';
 import '../datasources/groups_remote_data_source.dart';
 import '../dtos/group_dto.dart';
+import '../dtos/group_join_request_dto.dart';
 import '../dtos/group_member_dto.dart';
 
 class GroupsRepositoryImpl implements GroupsRepository {
@@ -52,7 +58,20 @@ class GroupsRepositoryImpl implements GroupsRepository {
   }
 
   @override
-  Future<Group> joinByInviteCode(String code) async => _mapGroup(await _remoteDataSource.joinByInviteCode(code));
+  Future<JoinGroupResult> joinByInviteCode(String code) async {
+    final dto = await _remoteDataSource.joinByInviteCode(code);
+    return JoinGroupResult(joined: dto.joined, group: dto.group == null ? null : _mapGroup(dto.group!));
+  }
+
+  @override
+  Future<List<GroupJoinRequest>> getJoinRequests(String groupId) async {
+    final dtos = await _remoteDataSource.getJoinRequests(groupId);
+    return dtos.map(_mapJoinRequest).toList();
+  }
+
+  @override
+  Future<void> respondToJoinRequest(String groupId, String requestId, GroupJoinRequestResponse response) =>
+      _remoteDataSource.respondToJoinRequest(groupId, requestId, response.toJson());
 
   Group _mapGroup(GroupDto dto) => Group(
         id: dto.id,
@@ -71,5 +90,17 @@ class GroupsRepositoryImpl implements GroupsRepository {
         profilePictureUrl: dto.profilePictureUrl,
         role: GroupRole.fromJson(dto.role),
         joinedAt: dto.joinedAt,
+      );
+
+  GroupJoinRequest _mapJoinRequest(GroupJoinRequestDto dto) =>
+      GroupJoinRequest(id: dto.id, profile: _mapProfile(dto.profile), createdAt: dto.createdAt);
+
+  PublicProfile _mapProfile(PublicProfileDto dto) => PublicProfile(
+        id: dto.id,
+        username: dto.username,
+        displayName: dto.displayName,
+        bio: dto.bio,
+        profilePictureUrl: dto.profilePictureUrl,
+        friendCode: dto.friendCode,
       );
 }
