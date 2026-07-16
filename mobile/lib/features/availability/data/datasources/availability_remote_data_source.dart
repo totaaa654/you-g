@@ -26,13 +26,11 @@ class AvailabilityRemoteDataSource {
     required DateTime from,
     required DateTime to,
     required bool weekendOnly,
-    String? preferredDayparts,
   }) async {
     final response = await _dio.get('/groups/$groupId/overlap', queryParameters: {
       'from': _dateOnly(from),
       'to': _dateOnly(to),
       'weekendOnly': weekendOnly,
-      if (preferredDayparts != null) 'preferredDayparts': preferredDayparts,
     });
     return OverlapResultDto.fromJson(response.data as Map<String, dynamic>);
   }

@@ -1,4 +1,3 @@
-import '../../../../core/models/availability_status.dart';
 import '../entities/availability_instance.dart';
 import '../entities/overlap_window.dart';
 
@@ -13,6 +12,5 @@ abstract class AvailabilityRepository {
     required DateTime from,
     required DateTime to,
     bool weekendOnly = false,
-    List<Daypart>? preferredDayparts,
   });
 }

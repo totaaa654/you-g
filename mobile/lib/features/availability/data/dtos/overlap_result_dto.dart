@@ -7,7 +7,7 @@ part 'overlap_result_dto.g.dart';
 abstract class OverlapWindowDto with _$OverlapWindowDto {
   const factory OverlapWindowDto({
     required DateTime date,
-    required String daypart,
+    required String startTime,
     required List<String> availableUserIds,
     required int availableCount,
     required int totalMembers,

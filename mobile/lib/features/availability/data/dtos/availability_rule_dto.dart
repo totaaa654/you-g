@@ -10,7 +10,7 @@ abstract class AvailabilityRuleDto with _$AvailabilityRuleDto {
   const factory AvailabilityRuleDto({
     required String id,
     required String dayOfWeek,
-    required String daypart,
+    required String startTime,
     required String status,
     required DateTime effectiveFrom,
     DateTime? effectiveUntil,

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import '../../../../core/models/availability_status.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/availability_badge.dart';
@@ -10,6 +11,7 @@ import '../../../../core/widgets/empty_state.dart';
 import '../../../../core/widgets/loading_skeleton.dart';
 import '../../../../core/widgets/profile_avatar.dart';
 import '../../../auth/presentation/providers/auth_controller.dart';
+import '../../../availability/domain/entities/availability_block.dart';
 import '../../../availability/presentation/providers/availability_providers.dart';
 import '../../../friends/presentation/providers/friends_providers.dart';
 import '../providers/home_providers.dart';
@@ -79,27 +81,33 @@ class HomeScreen extends ConsumerWidget {
               todayInstancesAsync.when(
                 loading: () => const LoadingSkeleton(height: 72, borderRadius: 20),
                 error: (_, _) => const SizedBox.shrink(),
-                data: (instances) => AppCard(
-                  padding: const EdgeInsets.all(16),
-                  child: instances.isEmpty
-                      ? Text("You haven't set today's availability yet.", style: Theme.of(context).textTheme.bodyMedium)
-                      : Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          children: [
-                            for (final instance in instances)
-                              Chip(
-                                label: Text(instance.daypart.label),
-                                avatar: CircleAvatar(
-                                  backgroundColor: Colors.transparent,
-                                  child: AvailabilityBadge(status: instance.status, dense: true),
+                data: (instances) {
+                  final declared = instances.where((i) => i.status != AvailabilityStatus.unknown).toList()
+                    ..sort((a, b) => a.startTime.compareTo(b.startTime));
+                  final blocks = mergeAvailabilityInstances(declared);
+
+                  return AppCard(
+                    padding: const EdgeInsets.all(16),
+                    child: blocks.isEmpty
+                        ? Text("You haven't set today's availability yet.", style: Theme.of(context).textTheme.bodyMedium)
+                        : Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: [
+                              for (final block in blocks)
+                                Chip(
+                                  label: Text('${block.start.label} - ${block.end.label}'),
+                                  avatar: CircleAvatar(
+                                    backgroundColor: Colors.transparent,
+                                    child: AvailabilityBadge(status: block.status, dense: true),
+                                  ),
+                                  backgroundColor: AppColors.fog,
+                                  side: BorderSide.none,
                                 ),
-                                backgroundColor: AppColors.fog,
-                                side: BorderSide.none,
-                              ),
-                          ],
-                        ),
-                ),
+                            ],
+                          ),
+                  );
+                },
               ),
               const SizedBox(height: 24),
               suggestedMeetupAsync.when(

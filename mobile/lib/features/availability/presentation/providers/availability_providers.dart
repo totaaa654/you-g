@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/models/availability_status.dart';
+import '../../../../core/models/time_slot.dart';
 import '../../../../core/network/network_providers.dart';
 import '../../../auth/presentation/providers/auth_controller.dart';
 import '../../../home/presentation/providers/home_providers.dart';
@@ -48,15 +49,23 @@ class MyInstancesNotifier extends FamilyAsyncNotifier<List<AvailabilityInstance>
     return ref.watch(availabilityRepositoryProvider).getMyInstances(from: arg.from, to: arg.to);
   }
 
-  Future<void> setStatus(DateTime date, Daypart daypart, AvailabilityStatus status) async {
+  Future<void> setStatus(DateTime date, TimeSlot startTime, AvailabilityStatus status) =>
+      setStatusRange(date, startTime, startTime.next, status);
+
+  /// Sets every 30-minute slot from [startTime] (inclusive) to [endTime] (exclusive) to
+  /// [status] in one batch upsert — what the day editor's "add availability" range maps onto.
+  Future<void> setStatusRange(DateTime date, TimeSlot startTime, TimeSlot endTime, AvailabilityStatus status) async {
     final repository = ref.read(availabilityRepositoryProvider);
-    final updated = AvailabilityInstance(date: date, daypart: daypart, status: status);
-    await repository.upsertInstances([updated]);
+    final slots = <TimeSlot>[];
+    for (var t = startTime; t.minutesSinceMidnight < endTime.minutesSinceMidnight; t = t.next) {
+      slots.add(t);
+    }
+    final updated = [for (final slot in slots) AvailabilityInstance(date: date, startTime: slot, status: status)];
+    await repository.upsertInstances(updated);
 
     state = state.whenData((instances) {
-      final withoutThis =
-          instances.where((i) => !(_sameDay(i.date, date) && i.daypart == daypart)).toList();
-      return [...withoutThis, updated];
+      final withoutThese = instances.where((i) => !(_sameDay(i.date, date) && slots.contains(i.startTime))).toList();
+      return [...withoutThese, ...updated];
     });
 
     // Both are computed from availability, but neither watches this notifier directly, so

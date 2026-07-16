@@ -7,6 +7,7 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/availability_badge.dart';
 import '../../../groups/domain/entities/group_member.dart';
 import '../../../groups/presentation/providers/groups_providers.dart';
+import '../../domain/entities/availability_block.dart';
 import '../../domain/entities/overlap_window.dart';
 import '../providers/availability_providers.dart';
 import '../widgets/day_availability_editor.dart';
@@ -121,6 +122,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                         rangeKey: weekRange,
                         onPrev: () => setState(() => _focusedWeekStart = _focusedWeekStart.subtract(const Duration(days: 7))),
                         onNext: () => setState(() => _focusedWeekStart = _focusedWeekStart.add(const Duration(days: 7))),
+                        onDayTap: (date) => _openEditor(date, weekRange),
                       ))
                 : (_mode == _CalendarViewMode.month
                     ? _GroupMonthView(
@@ -240,15 +242,14 @@ class _MonthView extends ConsumerWidget {
   }
 }
 
-const _weekDayparts = [Daypart.morning, Daypart.afternoon, Daypart.evening, Daypart.night];
-
 class _WeekView extends ConsumerWidget {
-  const _WeekView({required this.weekStart, required this.rangeKey, required this.onPrev, required this.onNext});
+  const _WeekView({required this.weekStart, required this.rangeKey, required this.onPrev, required this.onNext, required this.onDayTap});
 
   final DateTime weekStart;
   final DateRangeKey rangeKey;
   final VoidCallback onPrev;
   final VoidCallback onNext;
+  final ValueChanged<DateTime> onDayTap;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -256,11 +257,10 @@ class _WeekView extends ConsumerWidget {
     final instances = instancesAsync.valueOrNull ?? const [];
     final days = List.generate(7, (i) => weekStart.add(Duration(days: i)));
 
-    AvailabilityStatus statusFor(DateTime day, Daypart daypart) {
-      final match = instances.where(
-        (i) => i.date.year == day.year && i.date.month == day.month && i.date.day == day.day && i.daypart == daypart,
-      );
-      return match.isEmpty ? AvailabilityStatus.unknown : match.first.status;
+    List<AvailabilityBlock> blocksFor(DateTime day) {
+      final dayInstances = instances.where((i) => _isSameDay(i.date, day) && i.status != AvailabilityStatus.unknown).toList()
+        ..sort((a, b) => a.startTime.compareTo(b.startTime));
+      return mergeAvailabilityInstances(dayInstances);
     }
 
     return Column(
@@ -280,52 +280,77 @@ class _WeekView extends ConsumerWidget {
           ),
         ),
         Expanded(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            child: Table(
-              defaultColumnWidth: const FixedColumnWidth(56),
-              children: [
-                TableRow(
-                  children: [
-                    const SizedBox(),
-                    for (final day in days)
-                      Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 6),
-                        child: Column(
-                          children: [
-                            Text(DateFormat('E').format(day), style: const TextStyle(fontSize: 11, color: AppColors.unknownGray)),
-                            Text('${day.day}', style: const TextStyle(fontWeight: FontWeight.w700)),
-                          ],
-                        ),
-                      ),
-                  ],
-                ),
-                for (final daypart in _weekDayparts)
-                  TableRow(
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 10),
-                        child: Text(daypart.label, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600)),
-                      ),
-                      for (final day in days)
-                        Padding(
-                          padding: const EdgeInsets.all(4),
-                          child: InkWell(
-                            borderRadius: BorderRadius.circular(10),
-                            onTap: () {
-                              final next = DayAvailabilityEditor.nextStatusFor(statusFor(day, daypart));
-                              ref.read(myInstancesProvider(rangeKey).notifier).setStatus(day, daypart, next);
-                            },
-                            child: Center(child: AvailabilityBadge(status: statusFor(day, daypart), dense: true)),
-                          ),
-                        ),
-                    ],
-                  ),
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+            children: [
+              for (final day in days) ...[
+                _WeekDayCard(day: day, blocks: blocksFor(day), onTap: () => onDayTap(day)),
+                const SizedBox(height: 10),
               ],
-            ),
+            ],
           ),
         ),
       ],
+    );
+  }
+}
+
+class _WeekDayCard extends StatelessWidget {
+  const _WeekDayCard({required this.day, required this.blocks, required this.onTap});
+
+  final DateTime day;
+  final List<AvailabilityBlock> blocks;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final isToday = _isSameDay(day, DateTime.now());
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: isToday ? AppColors.navy.withValues(alpha: 0.06) : AppColors.fog,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(
+              width: 48,
+              child: Column(
+                children: [
+                  Text(DateFormat('E').format(day), style: const TextStyle(fontSize: 11, color: AppColors.unknownGray)),
+                  Text('${day.day}', style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: blocks.isEmpty
+                  ? const Text('No availability set', style: TextStyle(color: AppColors.unknownGray, fontSize: 13))
+                  : Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        for (final block in blocks)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 4),
+                            child: Row(
+                              children: [
+                                AvailabilityBadge(status: block.status, dense: true),
+                                const SizedBox(width: 8),
+                                Text('${block.start.label} - ${block.end.label}', style: const TextStyle(fontSize: 13)),
+                              ],
+                            ),
+                          ),
+                      ],
+                    ),
+            ),
+            const Icon(Icons.chevron_right_rounded, color: AppColors.unknownGray),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -452,9 +477,6 @@ class _GroupWeekView extends ConsumerWidget {
     final members = ref.watch(groupMembersProvider(groupId)).valueOrNull ?? const [];
     final totalMembers = members.length;
 
-    OverlapWindow? windowFor(DateTime day, Daypart daypart) =>
-        windows.where((w) => _isSameDay(w.date, day) && w.daypart == daypart).firstOrNull;
-
     return Column(
       children: [
         Padding(
@@ -472,64 +494,74 @@ class _GroupWeekView extends ConsumerWidget {
           ),
         ),
         Expanded(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            child: Table(
-              defaultColumnWidth: const FixedColumnWidth(56),
-              children: [
-                TableRow(
-                  children: [
-                    const SizedBox(),
-                    for (final day in days)
-                      Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 6),
-                        child: Column(
-                          children: [
-                            Text(DateFormat('E').format(day), style: const TextStyle(fontSize: 11, color: AppColors.unknownGray)),
-                            Text('${day.day}', style: const TextStyle(fontWeight: FontWeight.w700)),
-                          ],
-                        ),
-                      ),
-                  ],
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+            children: [
+              for (final day in days) ...[
+                _GroupWeekDayCard(
+                  day: day,
+                  windowsForDay: windows.where((w) => _isSameDay(w.date, day)).toList(),
+                  totalMembers: totalMembers,
+                  onTap: () => onDayTap(day, windows, members),
                 ),
-                for (final daypart in _weekDayparts)
-                  TableRow(
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 10),
-                        child: Text(daypart.label, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600)),
-                      ),
-                      for (final day in days)
-                        Padding(
-                          padding: const EdgeInsets.all(4),
-                          child: InkWell(
-                            borderRadius: BorderRadius.circular(10),
-                            onTap: () => onDayTap(day, windows, members),
-                            child: Builder(builder: (context) {
-                              final window = windowFor(day, daypart);
-                              final count = window?.availableCount ?? 0;
-                              final ratio = totalMembers == 0 ? 0.0 : count / totalMembers;
-                              final color = ratio >= 0.5
-                                  ? AppColors.availableGreen
-                                  : ratio > 0
-                                      ? AppColors.maybeGold
-                                      : AppColors.fog;
-                              return Container(
-                                padding: const EdgeInsets.symmetric(vertical: 6),
-                                decoration: BoxDecoration(color: color.withValues(alpha: 0.18), borderRadius: BorderRadius.circular(8)),
-                                alignment: Alignment.center,
-                                child: Text('$count/$totalMembers', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700)),
-                              );
-                            }),
-                          ),
-                        ),
-                    ],
-                  ),
+                const SizedBox(height: 10),
               ],
-            ),
+            ],
           ),
         ),
       ],
+    );
+  }
+}
+
+class _GroupWeekDayCard extends StatelessWidget {
+  const _GroupWeekDayCard({required this.day, required this.windowsForDay, required this.totalMembers, required this.onTap});
+
+  final DateTime day;
+  final List<OverlapWindow> windowsForDay;
+  final int totalMembers;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final isToday = _isSameDay(day, DateTime.now());
+    final best = windowsForDay.isEmpty
+        ? null
+        : (windowsForDay.toList()..sort((a, b) => b.availableCount.compareTo(a.availableCount))).first;
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: isToday ? AppColors.navy.withValues(alpha: 0.06) : AppColors.fog,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Row(
+          children: [
+            SizedBox(
+              width: 48,
+              child: Column(
+                children: [
+                  Text(DateFormat('E').format(day), style: const TextStyle(fontSize: 11, color: AppColors.unknownGray)),
+                  Text('${day.day}', style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: best == null
+                  ? const Text('No one available yet', style: TextStyle(color: AppColors.unknownGray, fontSize: 13))
+                  : Text(
+                      'Best: ${best.startTime.label} - ${best.startTime.next.label} · ${best.availableCount}/$totalMembers free',
+                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                    ),
+            ),
+            const Icon(Icons.chevron_right_rounded, color: AppColors.unknownGray),
+          ],
+        ),
+      ),
     );
   }
 }

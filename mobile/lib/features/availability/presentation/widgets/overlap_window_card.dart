@@ -3,7 +3,7 @@ import 'package:intl/intl.dart';
 
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/app_card.dart';
-import '../../domain/entities/overlap_window.dart';
+import '../../domain/entities/merged_overlap_window.dart';
 
 class OverlapWindowCard extends StatelessWidget {
   const OverlapWindowCard({
@@ -13,7 +13,7 @@ class OverlapWindowCard extends StatelessWidget {
     super.key,
   });
 
-  final OverlapWindow window;
+  final MergedOverlapWindow window;
   final bool highlighted;
   final VoidCallback? onTap;
 
@@ -34,7 +34,7 @@ class OverlapWindowCard extends StatelessWidget {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  '${DateFormat('EEEE, MMM d').format(window.date)} · ${window.daypart.label}',
+                  '${DateFormat('EEEE, MMM d').format(window.date)} · ${window.startTime.label} - ${window.endTime.label}',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(color: highlighted ? Colors.white : null),
                 ),
               ),

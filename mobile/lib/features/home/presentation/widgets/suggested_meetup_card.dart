@@ -37,7 +37,7 @@ class SuggestedMeetupCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      '${group.name} · ${DateFormat('EEE, MMM d').format(window.date)} ${window.daypart.label}',
+                      '${group.name} · ${DateFormat('EEE, MMM d').format(window.date)} ${window.startTime.label}',
                       style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 15),
                     ),
                     const SizedBox(height: 4),

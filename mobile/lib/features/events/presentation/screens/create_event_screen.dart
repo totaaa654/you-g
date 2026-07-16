@@ -8,20 +8,18 @@ import '../../../../core/widgets/app_button.dart';
 import '../../../groups/presentation/providers/groups_providers.dart';
 import '../providers/events_providers.dart';
 
-TimeOfDay _defaultTimeFor(String? daypart) => switch (daypart) {
-      'Morning' => const TimeOfDay(hour: 9, minute: 0),
-      'Afternoon' => const TimeOfDay(hour: 14, minute: 0),
-      'Evening' => const TimeOfDay(hour: 18, minute: 0),
-      'Night' => const TimeOfDay(hour: 21, minute: 0),
-      _ => const TimeOfDay(hour: 9, minute: 0),
-    };
+TimeOfDay _parseStartTime(String? startTime) {
+  if (startTime == null) return const TimeOfDay(hour: 9, minute: 0);
+  final parts = startTime.split(':');
+  return TimeOfDay(hour: int.parse(parts[0]), minute: int.parse(parts[1]));
+}
 
 class CreateEventScreen extends ConsumerStatefulWidget {
-  const CreateEventScreen({required this.groupId, this.initialDate, this.initialDaypart, super.key});
+  const CreateEventScreen({required this.groupId, this.initialDate, this.initialStartTime, super.key});
 
   final String groupId;
   final DateTime? initialDate;
-  final String? initialDaypart;
+  final String? initialStartTime;
 
   @override
   ConsumerState<CreateEventScreen> createState() => _CreateEventScreenState();
@@ -36,7 +34,7 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
   final _maxAttendeesController = TextEditingController();
 
   late DateTime _date = widget.initialDate ?? DateTime.now().add(const Duration(days: 1));
-  late TimeOfDay _startTime = _defaultTimeFor(widget.initialDaypart);
+  late TimeOfDay _startTime = _parseStartTime(widget.initialStartTime);
   late TimeOfDay _endTime = TimeOfDay(hour: (_startTime.hour + 2) % 24, minute: _startTime.minute);
 
   bool _submitting = false;
