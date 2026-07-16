@@ -1,8 +1,10 @@
 import 'package:dio/dio.dart';
 
 import '../dtos/group_dto.dart';
+import '../dtos/group_join_request_dto.dart';
 import '../dtos/group_member_dto.dart';
 import '../dtos/invite_link_dto.dart';
+import '../dtos/join_group_result_dto.dart';
 
 class GroupsRemoteDataSource {
   GroupsRemoteDataSource(this._dio);
@@ -46,8 +48,16 @@ class GroupsRemoteDataSource {
     return InviteLinkDto.fromJson(response.data as Map<String, dynamic>);
   }
 
-  Future<GroupDto> joinByInviteCode(String code) async {
+  Future<JoinGroupResultDto> joinByInviteCode(String code) async {
     final response = await _dio.post('/groups/join/$code');
-    return GroupDto.fromJson(response.data as Map<String, dynamic>);
+    return JoinGroupResultDto.fromJson(response.data as Map<String, dynamic>);
   }
+
+  Future<List<GroupJoinRequestDto>> getJoinRequests(String groupId) async {
+    final response = await _dio.get('/groups/$groupId/join-requests');
+    return (response.data as List).map((e) => GroupJoinRequestDto.fromJson(e as Map<String, dynamic>)).toList();
+  }
+
+  Future<void> respondToJoinRequest(String groupId, String requestId, String status) =>
+      _dio.put('/groups/$groupId/join-requests/$requestId', data: {'status': status});
 }

@@ -5,7 +5,10 @@ import '../../../auth/presentation/providers/auth_controller.dart';
 import '../../data/datasources/groups_remote_data_source.dart';
 import '../../data/repositories/groups_repository_impl.dart';
 import '../../domain/entities/group.dart';
+import '../../domain/entities/group_join_request.dart';
+import '../../domain/entities/group_join_request_response.dart';
 import '../../domain/entities/group_member.dart';
+import '../../domain/entities/join_group_result.dart';
 import '../../domain/repositories/groups_repository.dart';
 
 final groupsRemoteDataSourceProvider =
@@ -24,6 +27,25 @@ final groupMembersProvider =
 final groupByIdProvider = FutureProvider.family.autoDispose<Group, String>(
   (ref, groupId) => ref.watch(groupsRepositoryProvider).getGroupById(groupId),
 );
+
+final groupJoinRequestsProvider =
+    AsyncNotifierProvider.family<GroupJoinRequestsNotifier, List<GroupJoinRequest>, String>(
+  GroupJoinRequestsNotifier.new,
+);
+
+class GroupJoinRequestsNotifier extends FamilyAsyncNotifier<List<GroupJoinRequest>, String> {
+  @override
+  Future<List<GroupJoinRequest>> build(String groupId) =>
+      ref.watch(groupsRepositoryProvider).getJoinRequests(groupId);
+
+  Future<void> respond(String groupId, String requestId, GroupJoinRequestResponse response) async {
+    await ref.read(groupsRepositoryProvider).respondToJoinRequest(groupId, requestId, response);
+    state = state.whenData((requests) => requests.where((r) => r.id != requestId).toList());
+    if (response == GroupJoinRequestResponse.accepted) {
+      ref.invalidate(groupMembersProvider(groupId));
+    }
+  }
+}
 
 class MyGroupsNotifier extends AsyncNotifier<List<Group>> {
   @override
@@ -46,9 +68,15 @@ class MyGroupsNotifier extends AsyncNotifier<List<Group>> {
     return group;
   }
 
-  Future<void> joinByInviteCode(String code) async {
-    final group = await ref.read(groupsRepositoryProvider).joinByInviteCode(code);
-    state = state.whenData((groups) => [group, ...groups.where((g) => g.id != group.id)]);
+  /// Returns the result so the caller can tell the user whether they joined instantly or a
+  /// join request is now pending admin approval (see `JoinGroupResult`).
+  Future<JoinGroupResult> joinByInviteCode(String code) async {
+    final result = await ref.read(groupsRepositoryProvider).joinByInviteCode(code);
+    final group = result.group;
+    if (group != null) {
+      state = state.whenData((groups) => [group, ...groups.where((g) => g.id != group.id)]);
+    }
+    return result;
   }
 
   Future<void> leaveGroup(String groupId) async {

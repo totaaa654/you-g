@@ -16,9 +16,11 @@ using YouG.Application.Features.Groups.Commands.CreateInviteLink;
 using YouG.Application.Features.Groups.Commands.JoinGroupViaInvite;
 using YouG.Application.Features.Groups.Commands.LeaveGroup;
 using YouG.Application.Features.Groups.Commands.RemoveMember;
+using YouG.Application.Features.Groups.Commands.RespondToGroupJoinRequest;
 using YouG.Application.Features.Groups.Commands.UpdateGroup;
 using YouG.Application.Features.Groups.Dtos;
 using YouG.Application.Features.Groups.Queries.GetGroupById;
+using YouG.Application.Features.Groups.Queries.GetGroupJoinRequests;
 using YouG.Application.Features.Groups.Queries.GetGroupMembers;
 using YouG.Application.Features.Groups.Queries.GetMyGroups;
 
@@ -104,11 +106,28 @@ public class GroupsController(ISender sender) : ControllerBase
     }
 
     [HttpPost("join/{code}")]
-    [ProducesResponseType<GroupDto>(StatusCodes.Status200OK)]
-    public async Task<ActionResult<GroupDto>> Join(string code, CancellationToken cancellationToken)
+    [ProducesResponseType<JoinGroupResultDto>(StatusCodes.Status200OK)]
+    public async Task<ActionResult<JoinGroupResultDto>> Join(string code, CancellationToken cancellationToken)
     {
         var result = await sender.Send(new JoinGroupViaInviteCommand(code), cancellationToken);
         return Ok(result);
+    }
+
+    [HttpGet("{id:guid}/join-requests")]
+    [ProducesResponseType<List<GroupJoinRequestDto>>(StatusCodes.Status200OK)]
+    public async Task<ActionResult<List<GroupJoinRequestDto>>> GetJoinRequests(Guid id, CancellationToken cancellationToken)
+    {
+        var result = await sender.Send(new GetGroupJoinRequestsQuery(id), cancellationToken);
+        return Ok(result);
+    }
+
+    [HttpPut("{id:guid}/join-requests/{requestId:guid}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> RespondToJoinRequest(
+        Guid id, Guid requestId, RespondToJoinRequestRequest request, CancellationToken cancellationToken)
+    {
+        await sender.Send(new RespondToGroupJoinRequestCommand(id, requestId, request.Status), cancellationToken);
+        return NoContent();
     }
 
     [HttpGet("{id:guid}/overlap")]

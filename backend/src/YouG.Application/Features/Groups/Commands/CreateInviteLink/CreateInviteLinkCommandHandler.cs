@@ -18,9 +18,11 @@ public class CreateInviteLinkCommandHandler(
 
     public async Task<InviteLinkDto> Handle(CreateInviteLinkCommand request, CancellationToken cancellationToken)
     {
-        var membership = await GroupAuthorization.RequireMembershipAsync(
+        // Any member may create an invite link, not just admins — but a link created by a
+        // non-admin routes joiners through an approval step (see JoinGroupViaInviteCommandHandler),
+        // so this doesn't let a regular member add people to the group unchecked.
+        await GroupAuthorization.RequireMembershipAsync(
             groupMemberRepository, request.GroupId, currentUser.UserId, cancellationToken);
-        GroupAuthorization.RequireAdmin(membership);
 
         var code = await GenerateUniqueCodeAsync(cancellationToken);
         var now = dateTimeProvider.UtcNow;

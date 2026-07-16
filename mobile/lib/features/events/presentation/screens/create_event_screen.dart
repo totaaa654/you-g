@@ -90,6 +90,7 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
             initialLocationLatitude: double.tryParse(_latController.text.trim()),
             initialLocationLongitude: double.tryParse(_lngController.text.trim()),
           );
+      ref.invalidate(groupEventsProvider(widget.groupId));
       if (!mounted) return;
       context.pushReplacement('/events/${event.id}');
     } catch (_) {

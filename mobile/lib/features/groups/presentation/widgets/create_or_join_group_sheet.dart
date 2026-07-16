@@ -61,9 +61,14 @@ class _CreateOrJoinGroupSheetState extends ConsumerState<CreateOrJoinGroupSheet>
       _error = null;
     });
     try {
-      await ref.read(myGroupsProvider.notifier).joinByInviteCode(_codeController.text.trim());
+      final result = await ref.read(myGroupsProvider.notifier).joinByInviteCode(_codeController.text.trim());
       if (!mounted) return;
       Navigator.of(context).pop();
+      if (!result.joined) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Request sent — an admin needs to approve it before you join.')),
+        );
+      }
     } catch (_) {
       setState(() => _error = "That invite code didn't work. Double-check it and try again.");
     } finally {

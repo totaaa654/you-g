@@ -26,6 +26,7 @@ public static class DependencyInjection
         services.AddScoped<IGroupRepository, GroupRepository>();
         services.AddScoped<IGroupMemberRepository, GroupMemberRepository>();
         services.AddScoped<IGroupInviteLinkRepository, GroupInviteLinkRepository>();
+        services.AddScoped<IGroupJoinRequestRepository, GroupJoinRequestRepository>();
         services.AddScoped<IAvailabilityRuleRepository, AvailabilityRuleRepository>();
         services.AddScoped<IAvailabilityInstanceRepository, AvailabilityInstanceRepository>();
         services.AddScoped<IEventRepository, EventRepository>();

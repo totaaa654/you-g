@@ -223,6 +223,7 @@ class EventDetailScreen extends ConsumerWidget {
                                           await ref
                                               .read(eventsRepositoryProvider)
                                               .confirmEvent(eventId, timeOptionId: timeId, locationOptionId: locationId);
+                                          ref.invalidate(groupEventsProvider(event.groupId));
                                           if (context.mounted) Navigator.of(context).pop();
                                           ref.read(eventDetailProvider(eventId).notifier).refresh();
                                         },
@@ -237,6 +238,7 @@ class EventDetailScreen extends ConsumerWidget {
                             variant: AppButtonVariant.text,
                             onPressed: () async {
                               await ref.read(eventsRepositoryProvider).cancelEvent(eventId);
+                              ref.invalidate(groupEventsProvider(event.groupId));
                               if (context.mounted) context.pop();
                             },
                           ),
