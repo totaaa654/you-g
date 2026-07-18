@@ -37,7 +37,7 @@ public class RespondToFriendRequestCommandHandlerTests
 
         var handler = new RespondToFriendRequestCommandHandler(
             friendRequests, users, new FakeUnitOfWork(), new FakeCurrentUserService(requester.Id),
-            new FakeDateTimeProvider(DateTimeOffset.UtcNow));
+            new FakeDateTimeProvider(DateTimeOffset.UtcNow), new FakeNotificationDispatcher());
 
         await Assert.ThrowsAsync<ForbiddenException>(() => handler.Handle(
             new RespondToFriendRequestCommand(request.Id, FriendRequestStatus.Accepted), CancellationToken.None));
@@ -64,7 +64,7 @@ public class RespondToFriendRequestCommandHandlerTests
 
         var handler = new RespondToFriendRequestCommandHandler(
             friendRequests, users, new FakeUnitOfWork(), new FakeCurrentUserService(stranger.Id),
-            new FakeDateTimeProvider(DateTimeOffset.UtcNow));
+            new FakeDateTimeProvider(DateTimeOffset.UtcNow), new FakeNotificationDispatcher());
 
         await Assert.ThrowsAsync<NotFoundException>(() => handler.Handle(
             new RespondToFriendRequestCommand(request.Id, FriendRequestStatus.Accepted), CancellationToken.None));
@@ -89,7 +89,7 @@ public class RespondToFriendRequestCommandHandlerTests
 
         var handler = new RespondToFriendRequestCommandHandler(
             friendRequests, users, new FakeUnitOfWork(), new FakeCurrentUserService(addressee.Id),
-            new FakeDateTimeProvider(DateTimeOffset.UtcNow));
+            new FakeDateTimeProvider(DateTimeOffset.UtcNow), new FakeNotificationDispatcher());
 
         await Assert.ThrowsAsync<ConflictException>(() => handler.Handle(
             new RespondToFriendRequestCommand(request.Id, FriendRequestStatus.Accepted), CancellationToken.None));
@@ -114,7 +114,7 @@ public class RespondToFriendRequestCommandHandlerTests
 
         var handler = new RespondToFriendRequestCommandHandler(
             friendRequests, users, new FakeUnitOfWork(), new FakeCurrentUserService(addressee.Id),
-            new FakeDateTimeProvider(DateTimeOffset.UtcNow));
+            new FakeDateTimeProvider(DateTimeOffset.UtcNow), new FakeNotificationDispatcher());
 
         var result = await handler.Handle(
             new RespondToFriendRequestCommand(request.Id, FriendRequestStatus.Accepted), CancellationToken.None);

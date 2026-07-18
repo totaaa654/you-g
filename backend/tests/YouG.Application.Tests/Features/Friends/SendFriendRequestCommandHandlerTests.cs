@@ -24,7 +24,7 @@ public class SendFriendRequestCommandHandlerTests
         FakeBlockedUserRepository blockedUsers,
         FakeUserRepository users) =>
         new(friendRequests, blockedUsers, users, new FakeUnitOfWork(), new FakeCurrentUserService(callerId),
-            new FakeDateTimeProvider(DateTimeOffset.UtcNow));
+            new FakeDateTimeProvider(DateTimeOffset.UtcNow), new FakeNotificationDispatcher());
 
     [Fact]
     public async Task Handle_NoExistingRelationship_CreatesPendingRequest()

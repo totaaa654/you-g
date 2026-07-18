@@ -3,8 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../features/auth/presentation/providers/auth_controller.dart';
+import '../../features/auth/presentation/screens/forgot_password_screen.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/register_screen.dart';
+import '../../features/auth/presentation/screens/reset_password_screen.dart';
 import '../../features/availability/presentation/screens/calendar_screen.dart';
 import '../../features/availability/presentation/screens/smart_time_finder_screen.dart';
 import '../../features/events/presentation/screens/create_event_screen.dart';
@@ -19,7 +21,7 @@ import '../../features/settings/presentation/screens/settings_screen.dart';
 import '../../features/start/presentation/screens/start_screen.dart';
 import '../widgets/bottom_nav_shell.dart';
 
-const _preLoginRoutes = {'/start', '/login', '/register'};
+const _preLoginRoutes = {'/start', '/login', '/register', '/forgot-password', '/reset-password'};
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   // Riverpod's Listenable bridge — GoRouter re-evaluates `redirect` whenever this notifies,
@@ -47,6 +49,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/start', builder: (context, state) => const StartScreen()),
       GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
       GoRoute(path: '/register', builder: (context, state) => const RegisterScreen()),
+      GoRoute(path: '/forgot-password', builder: (context, state) => const ForgotPasswordScreen()),
+      GoRoute(
+        path: '/reset-password',
+        builder: (context, state) => ResetPasswordScreen(
+          email: state.uri.queryParameters['email'],
+          code: state.uri.queryParameters['code'],
+        ),
+      ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) => BottomNavShell(navigationShell: navigationShell),
         branches: [

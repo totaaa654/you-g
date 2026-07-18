@@ -17,4 +17,10 @@ abstract class AuthRepository {
   /// Doesn't guarantee the tokens are still valid server-side — the Dio refresh
   /// interceptor handles that on the first real request.
   Future<UserSummary?> restoreSession();
+
+  /// Always succeeds from the caller's perspective whether or not the email is registered —
+  /// the backend deliberately doesn't reveal which, to avoid account enumeration.
+  Future<void> forgotPassword(String email);
+
+  Future<void> resetPassword({required String email, required String code, required String newPassword});
 }

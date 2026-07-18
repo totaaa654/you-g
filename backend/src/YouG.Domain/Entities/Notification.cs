@@ -7,6 +7,8 @@ public class Notification : Entity
 {
     public required Guid UserId { get; set; }
     public required NotificationType Type { get; set; }
+    public required string Title { get; set; }
+    public required string Body { get; set; }
 
     /// <summary>Polymorphic per-type JSON payload (e.g. { "groupId": "...", "eventId": "..." }).</summary>
     public required string Payload { get; set; }

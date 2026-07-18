@@ -525,6 +525,10 @@ namespace YouG.Infrastructure.Persistence.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<string>("Body")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -534,6 +538,10 @@ namespace YouG.Infrastructure.Persistence.Migrations
                     b.Property<string>("Payload")
                         .IsRequired()
                         .HasColumnType("jsonb");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.Property<short>("Type")
                         .HasColumnType("smallint");
@@ -546,6 +554,38 @@ namespace YouG.Infrastructure.Persistence.Migrations
                     b.HasIndex("UserId", "IsRead", "CreatedAt");
 
                     b.ToTable("Notifications", (string)null);
+                });
+
+            modelBuilder.Entity("YouG.Domain.Entities.PasswordResetToken", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("FailedAttempts")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTimeOffset?>("UsedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("PasswordResetTokens", (string)null);
                 });
 
             modelBuilder.Entity("YouG.Domain.Entities.RefreshToken", b =>
@@ -904,6 +944,15 @@ namespace YouG.Infrastructure.Persistence.Migrations
                 });
 
             modelBuilder.Entity("YouG.Domain.Entities.Notification", b =>
+                {
+                    b.HasOne("YouG.Domain.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("YouG.Domain.Entities.PasswordResetToken", b =>
                 {
                     b.HasOne("YouG.Domain.Entities.User", null)
                         .WithMany()

@@ -36,8 +36,9 @@ public class ConfirmEventCommandHandlerTests
         var (@event, timeOption, locationOption, events, timeOptions, locationOptions, members) = Setup(organizerId);
 
         var handler = new ConfirmEventCommandHandler(
-            events, timeOptions, locationOptions, members, new FakeUnitOfWork(),
-            new FakeCurrentUserService(organizerId), new FakeDateTimeProvider(DateTimeOffset.UtcNow));
+            events, timeOptions, locationOptions, new FakeGroupRepository(), members, new FakeUnitOfWork(),
+            new FakeCurrentUserService(organizerId), new FakeDateTimeProvider(DateTimeOffset.UtcNow),
+            new FakeNotificationDispatcher());
 
         var result = await handler.Handle(new ConfirmEventCommand(@event.Id, timeOption.Id, locationOption.Id), CancellationToken.None);
 
@@ -55,8 +56,9 @@ public class ConfirmEventCommandHandlerTests
         members.Members.Add(new GroupMember { GroupId = @event.GroupId, UserId = otherMemberId, Role = GroupRole.Member });
 
         var handler = new ConfirmEventCommandHandler(
-            events, timeOptions, locationOptions, members, new FakeUnitOfWork(),
-            new FakeCurrentUserService(otherMemberId), new FakeDateTimeProvider(DateTimeOffset.UtcNow));
+            events, timeOptions, locationOptions, new FakeGroupRepository(), members, new FakeUnitOfWork(),
+            new FakeCurrentUserService(otherMemberId), new FakeDateTimeProvider(DateTimeOffset.UtcNow),
+            new FakeNotificationDispatcher());
 
         await Assert.ThrowsAsync<ForbiddenException>(
             () => handler.Handle(new ConfirmEventCommand(@event.Id, timeOption.Id, locationOption.Id), CancellationToken.None));
@@ -72,8 +74,9 @@ public class ConfirmEventCommandHandlerTests
         timeOptions.Options.Add(foreignTimeOption);
 
         var handler = new ConfirmEventCommandHandler(
-            events, timeOptions, locationOptions, members, new FakeUnitOfWork(),
-            new FakeCurrentUserService(organizerId), new FakeDateTimeProvider(DateTimeOffset.UtcNow));
+            events, timeOptions, locationOptions, new FakeGroupRepository(), members, new FakeUnitOfWork(),
+            new FakeCurrentUserService(organizerId), new FakeDateTimeProvider(DateTimeOffset.UtcNow),
+            new FakeNotificationDispatcher());
 
         await Assert.ThrowsAsync<NotFoundException>(
             () => handler.Handle(new ConfirmEventCommand(@event.Id, foreignTimeOption.Id, locationOption.Id), CancellationToken.None));
@@ -87,8 +90,9 @@ public class ConfirmEventCommandHandlerTests
         @event.Status = EventStatus.Cancelled;
 
         var handler = new ConfirmEventCommandHandler(
-            events, timeOptions, locationOptions, members, new FakeUnitOfWork(),
-            new FakeCurrentUserService(organizerId), new FakeDateTimeProvider(DateTimeOffset.UtcNow));
+            events, timeOptions, locationOptions, new FakeGroupRepository(), members, new FakeUnitOfWork(),
+            new FakeCurrentUserService(organizerId), new FakeDateTimeProvider(DateTimeOffset.UtcNow),
+            new FakeNotificationDispatcher());
 
         await Assert.ThrowsAsync<ConflictException>(
             () => handler.Handle(new ConfirmEventCommand(@event.Id, timeOption.Id, locationOption.Id), CancellationToken.None));

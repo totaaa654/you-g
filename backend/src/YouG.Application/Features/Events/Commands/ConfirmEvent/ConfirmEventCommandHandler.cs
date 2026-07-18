@@ -10,10 +10,12 @@ public class ConfirmEventCommandHandler(
     IEventRepository eventRepository,
     IEventTimeOptionRepository timeOptionRepository,
     IEventLocationOptionRepository locationOptionRepository,
+    IGroupRepository groupRepository,
     IGroupMemberRepository groupMemberRepository,
     IUnitOfWork unitOfWork,
     ICurrentUserService currentUser,
-    IDateTimeProvider dateTimeProvider) : IRequestHandler<ConfirmEventCommand, EventDto>
+    IDateTimeProvider dateTimeProvider,
+    INotificationDispatcher notificationDispatcher) : IRequestHandler<ConfirmEventCommand, EventDto>
 {
     public async Task<EventDto> Handle(ConfirmEventCommand request, CancellationToken cancellationToken)
     {
@@ -44,6 +46,20 @@ public class ConfirmEventCommandHandler(
         @event.UpdatedAt = dateTimeProvider.UtcNow;
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
+
+        var group = await groupRepository.GetByIdAsync(@event.GroupId, cancellationToken);
+        if (group is not null)
+        {
+            var members = await groupMemberRepository.GetMembersByGroupIdAsync(@event.GroupId, cancellationToken);
+            foreach (var member in members.Where(m => m.UserId != currentUser.UserId))
+            {
+                await notificationDispatcher.DispatchAsync(
+                    member.UserId, NotificationType.ScheduleUpdate, $"\"{@event.Title}\" is confirmed",
+                    $"The time and location for \"{@event.Title}\" in {group.Name} have been locked in.",
+                    new Dictionary<string, string> { ["eventId"] = @event.Id.ToString(), ["groupId"] = group.Id.ToString() },
+                    cancellationToken);
+            }
+        }
 
         return new EventDto(
             @event.Id, @event.GroupId, @event.CreatedByUserId, @event.Title, @event.Description,

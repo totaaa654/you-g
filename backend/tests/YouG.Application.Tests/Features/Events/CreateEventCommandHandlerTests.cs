@@ -17,8 +17,9 @@ public class CreateEventCommandHandlerTests
         groupMembers.Members.Add(new GroupMember { GroupId = groupId, UserId = callerId, Role = GroupRole.Member });
 
         var handler = new CreateEventCommandHandler(
-            events, timeOptions, locationOptions, groupMembers, new FakeUnitOfWork(),
-            new FakeCurrentUserService(callerId), new FakeDateTimeProvider(DateTimeOffset.UtcNow));
+            events, timeOptions, locationOptions, new FakeGroupRepository(), groupMembers, new FakeUserRepository(),
+            new FakeUnitOfWork(), new FakeCurrentUserService(callerId), new FakeDateTimeProvider(DateTimeOffset.UtcNow),
+            new FakeNotificationDispatcher());
 
         return (handler, events);
     }
@@ -85,8 +86,9 @@ public class CreateEventCommandHandlerTests
         var groupMembers = new FakeGroupMemberRepository(new FakeGroupRepository());
 
         var handler = new CreateEventCommandHandler(
-            events, timeOptions, locationOptions, groupMembers, new FakeUnitOfWork(),
-            new FakeCurrentUserService(Guid.CreateVersion7()), new FakeDateTimeProvider(DateTimeOffset.UtcNow));
+            events, timeOptions, locationOptions, new FakeGroupRepository(), groupMembers, new FakeUserRepository(),
+            new FakeUnitOfWork(), new FakeCurrentUserService(Guid.CreateVersion7()), new FakeDateTimeProvider(DateTimeOffset.UtcNow),
+            new FakeNotificationDispatcher());
 
         await Assert.ThrowsAsync<NotFoundException>(() => handler.Handle(
             new CreateEventCommand(groupId, "Board Games", null, null, null, null, null, null, null, null),

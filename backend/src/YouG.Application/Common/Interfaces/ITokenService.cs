@@ -11,4 +11,8 @@ public interface ITokenService
 
     /// <summary>Deterministic hash used both to store and to look up a refresh token by its raw value.</summary>
     string HashToken(string rawToken);
+
+    /// <summary>Short numeric code (e.g. for password-reset OTPs) — easy to read and type/paste
+    /// by hand, unlike <see cref="GenerateRefreshToken"/>'s high-entropy blob.</summary>
+    string GenerateOtpCode();
 }

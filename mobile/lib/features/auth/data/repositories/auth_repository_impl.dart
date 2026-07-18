@@ -59,6 +59,13 @@ class AuthRepositoryImpl implements AuthRepository {
     return _cachedUserStorage.read();
   }
 
+  @override
+  Future<void> forgotPassword(String email) => _remoteDataSource.forgotPassword(email);
+
+  @override
+  Future<void> resetPassword({required String email, required String code, required String newPassword}) =>
+      _remoteDataSource.resetPassword(email: email, code: code, newPassword: newPassword);
+
   Future<UserSummary> _persistAndMap(AuthResultDto result) async {
     await _tokenStorage.saveTokens(accessToken: result.accessToken, refreshToken: result.refreshToken);
 

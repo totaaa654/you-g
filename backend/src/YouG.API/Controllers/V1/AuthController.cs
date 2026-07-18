@@ -3,10 +3,12 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using YouG.API.Contracts.Auth;
+using YouG.Application.Features.Auth.Commands.ForgotPassword;
 using YouG.Application.Features.Auth.Commands.Login;
 using YouG.Application.Features.Auth.Commands.Logout;
 using YouG.Application.Features.Auth.Commands.Refresh;
 using YouG.Application.Features.Auth.Commands.Register;
+using YouG.Application.Features.Auth.Commands.ResetPassword;
 using YouG.Application.Features.Auth.Dtos;
 
 namespace YouG.API.Controllers.V1;
@@ -51,6 +53,24 @@ public class AuthController(ISender sender) : ControllerBase
     public async Task<IActionResult> Logout(RefreshTokenRequest request, CancellationToken cancellationToken)
     {
         await sender.Send(new LogoutCommand(request.RefreshToken), cancellationToken);
+        return NoContent();
+    }
+
+    // Always 204 whether or not the email is registered — distinguishing the two would let a
+    // caller enumerate accounts (see ForgotPasswordCommandHandler for the same rationale).
+    [HttpPost("forgot-password")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> ForgotPassword(ForgotPasswordRequest request, CancellationToken cancellationToken)
+    {
+        await sender.Send(new ForgotPasswordCommand(request.Email), cancellationToken);
+        return NoContent();
+    }
+
+    [HttpPost("reset-password")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> ResetPassword(ResetPasswordRequest request, CancellationToken cancellationToken)
+    {
+        await sender.Send(new ResetPasswordCommand(request.Email, request.Code, request.NewPassword), cancellationToken);
         return NoContent();
     }
 }

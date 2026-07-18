@@ -7,11 +7,13 @@ using YouG.Domain.Enums;
 namespace YouG.Application.Features.Groups.Commands.RespondToGroupJoinRequest;
 
 public class RespondToGroupJoinRequestCommandHandler(
+    IGroupRepository groupRepository,
     IGroupMemberRepository groupMemberRepository,
     IGroupJoinRequestRepository joinRequestRepository,
     IUnitOfWork unitOfWork,
     ICurrentUserService currentUser,
-    IDateTimeProvider dateTimeProvider) : IRequestHandler<RespondToGroupJoinRequestCommand>
+    IDateTimeProvider dateTimeProvider,
+    INotificationDispatcher notificationDispatcher) : IRequestHandler<RespondToGroupJoinRequestCommand>
 {
     public async Task Handle(RespondToGroupJoinRequestCommand request, CancellationToken cancellationToken)
     {
@@ -53,5 +55,16 @@ public class RespondToGroupJoinRequestCommandHandler(
         }
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
+
+        if (request.Status == GroupJoinRequestStatus.Accepted)
+        {
+            var group = await groupRepository.GetByIdAsync(request.GroupId, cancellationToken)
+                ?? throw new NotFoundException("Group not found.");
+
+            await notificationDispatcher.DispatchAsync(
+                joinRequest.UserId, NotificationType.GroupInvite, "Join request approved",
+                $"You're in! Your request to join {group.Name} was approved.",
+                new Dictionary<string, string> { ["groupId"] = group.Id.ToString() }, cancellationToken);
+        }
     }
 }

@@ -33,4 +33,11 @@ class AuthRemoteDataSource {
   Future<void> logout(String refreshToken) async {
     await _dio.post('/auth/logout', data: {'refreshToken': refreshToken});
   }
+
+  Future<void> forgotPassword(String email) => _dio.post('/auth/forgot-password', data: {'email': email});
+
+  Future<void> resetPassword({required String email, required String code, required String newPassword}) => _dio.post(
+        '/auth/reset-password',
+        data: {'email': email, 'code': code, 'newPassword': newPassword},
+      );
 }

@@ -12,9 +12,11 @@ public class JoinGroupViaInviteCommandHandler(
     IGroupMemberRepository groupMemberRepository,
     IGroupInviteLinkRepository inviteLinkRepository,
     IGroupJoinRequestRepository joinRequestRepository,
+    IUserRepository userRepository,
     IUnitOfWork unitOfWork,
     ICurrentUserService currentUser,
-    IDateTimeProvider dateTimeProvider) : IRequestHandler<JoinGroupViaInviteCommand, JoinGroupResultDto>
+    IDateTimeProvider dateTimeProvider,
+    INotificationDispatcher notificationDispatcher) : IRequestHandler<JoinGroupViaInviteCommand, JoinGroupResultDto>
 {
     public async Task<JoinGroupResultDto> Handle(JoinGroupViaInviteCommand request, CancellationToken cancellationToken)
     {
@@ -63,6 +65,8 @@ public class JoinGroupViaInviteCommandHandler(
         var existingRequest = await joinRequestRepository.GetByGroupAndUserAsync(
             group.Id, currentUser.UserId, cancellationToken);
 
+        var isNewOrReopenedRequest = existingRequest is null || existingRequest.Status == GroupJoinRequestStatus.Declined;
+
         if (existingRequest is null)
         {
             joinRequestRepository.Add(new GroupJoinRequest
@@ -82,6 +86,24 @@ public class JoinGroupViaInviteCommandHandler(
             existingRequest.CreatedAt = now;
             existingRequest.RespondedAt = null;
             await unitOfWork.SaveChangesAsync(cancellationToken);
+        }
+
+        var joiner = isNewOrReopenedRequest
+            ? await userRepository.GetByIdAsync(currentUser.UserId, cancellationToken)
+            : null;
+
+        if (joiner is not null)
+        {
+            var admins = (await groupMemberRepository.GetMembersByGroupIdAsync(group.Id, cancellationToken))
+                .Where(m => m.Role == GroupRole.Admin);
+
+            foreach (var admin in admins)
+            {
+                await notificationDispatcher.DispatchAsync(
+                    admin.UserId, NotificationType.GroupInvite, "New join request",
+                    $"{joiner.DisplayName} wants to join {group.Name}.",
+                    new Dictionary<string, string> { ["groupId"] = group.Id.ToString() }, cancellationToken);
+            }
         }
 
         return new JoinGroupResultDto(false, null);
